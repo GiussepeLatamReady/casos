@@ -2411,7 +2411,7 @@ function(record, runtime, fileModulo, email, search, format, log,
 
                      saldoFinal = redondear(Number(saldoInicial) + Number(debito) - Number(credito));
 
-                     totalStringK030 += "|K155|" + ArrNewregistrok155[j][1] + "|" + centroCosto + "|" + obtenerFormatoNumero(Number(saldoInicial.toFixed(2))) + "|";
+                     totalStringK030 += "|K155|" + ArrNewregistrok155[j][1] + "|" + centroCosto + "|" + obtenerFormatoNumero(Number(saldoInicial).toFixed(2)) + "|";
 
                      if (Number(saldoInicial) >= 0) {
                          totalStringK030 += "D|";
