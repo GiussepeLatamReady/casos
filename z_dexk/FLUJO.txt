@@ -1,0 +1,50 @@
+ObtenerCuentas
+    * 0. Internal ID
+    * 1. Number
+    * 2. puc 1 digit id
+    * 3. puc 1 digit desc
+    * 4. puc 2 digit id
+    * 5. puc 2 digit desc
+    * 6. puc 4 digit id
+    * 7. puc 4 digit desc
+    * 8. puc 6 digit id
+    * 9. puc 6 digit desc
+
+obtener data
+	// 0. Account       
+        // 1. Debit
+        // 2. Credit
+        // 3. Document
+saldo anterior
+	 arr[0] = ArrAccounts[j][8];//puc 6 digit id
+         arr[1] = ArrAccounts[j][9];//puc 6 digit desc
+         arr[2] = ArrTemp[i][1];//Debit
+         arr[3] = ArrTemp[i][2];//Credit
+         arr[4] = 0.0;
+         arr[5] = 0.0;
+         arr[6] = ArrTemp[i][1];//Debit
+         arr[7] = ArrTemp[i][2];//Credit
+         arr[8] = ArrAccounts[j][6];//puc 4 digit id
+         arr[9] = ArrAccounts[j][7];//puc 4 digit desc
+         arr[10] = ArrAccounts[j][4];//puc 2 digit id
+         arr[11] = ArrAccounts[j][5];//puc 2 digit desc
+         arr[12] = ArrAccounts[j][2];//puc 1 digit id
+         arr[13] = ArrAccounts[j][3];//puc 1 digit desc
+         arr[14] = ArrTemp[i][3];//Document
+
+Movimientos
+	 arr[0] = ArrAccounts[j][8];//puc 6 digit id
+         arr[1] = ArrAccounts[j][9];//puc 6 digit desc
+         arr[2] = 0.0;
+         arr[3] = 0.0;
+         arr[4] = ArrTemp[i][1];//Debit
+         arr[5] = ArrTemp[i][2];//Credit
+         arr[6] = ArrTemp[i][1];//Debit
+         arr[7] = ArrTemp[i][2];//Credit
+         arr[8] = ArrAccounts[j][6];//puc 4 digit id
+         arr[9] = ArrAccounts[j][7];//puc 4 digit desc
+         arr[10] = ArrAccounts[j][4];//puc 2 digit id
+         arr[11] = ArrAccounts[j][5];//puc 2 digit desc
+         arr[12] = ArrAccounts[j][2];//puc 1 digit id
+         arr[13] = ArrAccounts[j][3];//puc 1 digit desc
+         arr[14] = ArrTemp[i][3];//Document
