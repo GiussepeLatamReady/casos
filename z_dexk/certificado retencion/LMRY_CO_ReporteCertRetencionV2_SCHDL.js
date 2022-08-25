@@ -290,7 +290,7 @@ function DetalleRetencion() {
         strAux += "<p>" + ArrRetencion[i][5] + "</p>";
         strAux += "</td>";
         strAux += "<td style=\"text-align: center; font-size: 9pt; border: 1px solid #000000\" align=\"right\">";
-        strAux += "<p>" + FormatoNumero(parseFloat(Math.abs(ArrRetencion[i][4])).toFixed(2), "$") + "</p>";
+        strAux += "<p>" + FormatoNumero(parseFloat(ArrRetencion[i][4]).toFixed(2), "$") + "</p>";
         strAux += "</td>";
         strAux += "</tr>";
 

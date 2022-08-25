@@ -198,11 +198,11 @@ define(["N/record", "N/runtime", "N/file", "N/email", "N/encode", "N/search",
                 
                 
                 if (ArrRetencion[i][3]=='VendBill') {
-                    montototal = parseFloat(montototal) + parseFloat(Math.round(parseFloat(Number(ArrRetencion[i][7])) * 100) / 100);
+                    ArrRetencion[i][7]=Math.abs(ArrRetencion[i][7]);
                 }else if (ArrRetencion[i][3]=='VendCred') {
-                    montototal = parseFloat(montototal) - parseFloat(Math.round(parseFloat(Number(ArrRetencion[i][7])) * 100) / 100);
+                    ArrRetencion[i][7]=-Math.abs(ArrRetencion[i][7]);
                 }
-
+                montototal = parseFloat(montototal) + parseFloat(Math.round(parseFloat(Number(ArrRetencion[i][7])) * 100) / 100);
                 //montototal = parseFloat(montototal) + parseFloat(ArrRetencion[i][7]);
                 // montototal = parseFloat(montototal) + parseFloat(Math.round(parseFloat(Number(ArrRetencion[i][7])) * 100) / 100);
 
