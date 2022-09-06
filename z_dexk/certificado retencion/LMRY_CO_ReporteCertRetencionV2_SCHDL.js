@@ -258,6 +258,10 @@ function FormatoNumero(pNumero, pSimbolo) {
         splitLeft = splitLeft.replace(regx, '$1' + separador + '$2');
     }
     pSimbolo = pSimbolo || '';
+    if (splitLeft.charAt(0)==='-') {
+        splitLeft=splitLeft.slice(1)
+        pSimbolo='-'+pSimbolo
+    }
     var valor = pSimbolo + splitLeft + splitRight;
     return valor;
 }
