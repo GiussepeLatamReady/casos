@@ -11,8 +11,8 @@
  *@NScriptType MapReduceScript
  *@Name LMRY_PE_LibroCajaYBancosEfectiva_MPRD_V2.0.js
  */
-define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/config", "./PE_Library_Mensual/LMRY_PE_Reportes_LBRY_V2.0.js", "/SuiteBundles/Bundle 37714/Latam_Library/LMRY_libSendingEmailsLBRY_V2.0.js"],
-    function (search, task, runtime, file, record, format, config, libreria, libreriaLicense) {
+define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/config"],
+    function (search, task, runtime, file, record, format, config) {
 
         var NAME_REPORT = "Libro de Caja y Bancos Efectiva";
         var LMRY_SCRIPT = 'LMRY_PE_LibroCajaYBancosEfectiva_MPRD_V2.0.js';
@@ -63,15 +63,16 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
                 //Saldo Anterior
                 var arrPreviousBalance = getPreviousBalance();
                 //Movimentos
-                
+                log.debug("arrPreviousBalance",arrPreviousBalance.length)
                 var arrMovements = getMovements();
-               
+                log.debug("arrMovements",arrMovements.length)
                 //Movimentos pagos de facturas
                 var arrMovementsPayments = getMovementsPayments();
-               
+                log.debug("arrMovementsPayments",arrMovementsPayments.length)
                 var arrMovementsPayExpRep = getMovementsPayExpRep();
-               
+                log.debug("arrMovementsPayExpRep",arrMovementsPayExpRep.length)
                 arrTransactions = arrTransactions.concat(arrPreviousBalance, arrMovements, arrMovementsPayments,arrMovementsPayExpRep);
+                log.debug("arrTransactions",arrTransactions.length)
                 
 
                
@@ -80,7 +81,7 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
                 //return [];
             } catch (err) {
 
-                libreria.sendMail(LMRY_SCRIPT, ' [ ObtainNameSubsidiaria ] ' + err);
+                //libreria.sendMail(LMRY_SCRIPT, ' [ ObtainNameSubsidiaria ] ' + err);
                 log.error("[ getInputData ]", err);
                 return [{
                     "isError": "T",
@@ -193,45 +194,53 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
                 getSubisidiaryData();
                 getVerifiedAccounts();
 
-                var arrPreviousBalance = new Array();
-                var arrMovements = new Array();
-                var arrMovementsPayments = new Array();
+                // var arrPreviousBalance = new Array();
+                // var arrMovements = new Array();
+                // var arrMovementsPayments = new Array();
                 var arrTransactions = new Array();
                 context.output.iterator().each(function (key, value) {
-
-                    var type = key;
-                    if (type == "previousBalance") {
-                        var jsonSaldoAnterior = JSON.parse(value);
-                        arrPreviousBalance.push(jsonSaldoAnterior.arrTransactions);
-
-
-                    } else if (type == "movements") {
-                        var jsonMovimientos = JSON.parse(value);
-                        arrMovements.push(jsonMovimientos.arrTransactions);
+                    arrTransactions.push(JSON.parse(value).arrTransactions);
+                    // var type = key;
+                    // if (type == "previousBalance") {
+                    //     var jsonSaldoAnterior = JSON.parse(value);
+                    //     arrPreviousBalance.push(jsonSaldoAnterior.arrTransactions);
 
 
-                    } else if (type == "movementsPayments") {
-                        var jsonMovimientosPayments = JSON.parse(value);
-                        arrMovementsPayments.push(jsonMovimientosPayments.arrTransactions);
+                    // } else if (type == "movements") {
+                    //     var jsonMovimientos = JSON.parse(value);
+                    //     arrMovements.push(jsonMovimientos.arrTransactions);
 
 
-                    }
+                    // } else if (type == "movementsPayments") {
+                    //     var jsonMovimientosPayments = JSON.parse(value);
+                    //     arrMovementsPayments.push(jsonMovimientosPayments.arrTransactions);
+
+
+                    // }
                     return true;
                 });
-               
-               
-                if (arrAccountingContextVerif.length!=0) {
-                    arrPreviousBalance = joinRepeat(arrPreviousBalance);
-                }
-                         
-               
-                arrMovementsPayments.sort(function(a,b){
-                    return a[4]-b[4];
-                });
-                arrMovements = joinMovements(arrMovements, arrMovementsPayments);
+                log.error("arrTransactions",arrTransactions.length)
+                // log.debug("arrPreviousBalance",arrPreviousBalance.length);
+                // log.debug("arrMovements",arrMovements.length);
+                // log.debug("arrMovementsPayments",arrMovementsPayments.length);
+                // log.debug("console","Agrupando saldo inicial...");
+
+                // if (arrAccountingContextVerif.length!=0) {
+                //     arrPreviousBalance = joinRepeat(arrPreviousBalance);
+                // }
+                // log.debug("console","agrupacion terminada...");     
+                // log.debug("console","Ordenando pago de movimientos...");
+                // arrMovementsPayments.sort(function(a,b){
+                //     return a[4]-b[4];
+                // });
+                // log.debug("console","pago de movimientos ordenados.");
+                // log.debug("console","Agrupando movimientos...");
+                // arrMovements = joinMovements(arrMovements, arrMovementsPayments);
+                // log.debug("console","Movimientos Agrupados.");
                 
-                     
-                var arrTransactions = joinTransactions(arrPreviousBalance, arrMovements);
+                // log.debug("console","Agrupando Total de transacciones...");     
+                // var arrTransactions = joinTransactions(arrPreviousBalance, arrMovements);
+                // log.debug("console","Total de transacciones agrupadas");
                 
                 
                 
@@ -256,14 +265,15 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
                    
                     callSchedule();
                 } else {
-                    NoData();
+                    //NoData();
+                    log.debug("No data","no data");
                 }
                 
             } catch (err) {
 
                 log.error("[ summarize ]", err);
-                updateLogGenerator('error');
-                libreria.sendMail(LMRY_SCRIPT, ' [ Summarize ] ' + err);
+                //updateLogGenerator('error');
+                //libreria.sendMail(LMRY_SCRIPT, ' [ Summarize ] ' + err);
             }
         }
 
@@ -272,36 +282,22 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
             // Parametros
 
             //paramperiodo
-            PARAMETERS.PERIOD = objContext.getParameter({
-                name: 'custscript_lmry_pe_caj_banc_efec_peri_mp'
-            });
+            PARAMETERS.PERIOD = '128';
 
             //paramClosedPeriod
-            PARAMETERS.CLOSED_PERIOD = objContext.getParameter({
-                name: 'custscript_lmry_pe_caj_banc_efec_cier_mp'
-            });
+            PARAMETERS.CLOSED_PERIOD ='F';
             //paramsubsidi
-            PARAMETERS.SUBSID = objContext.getParameter({
-                name: 'custscript_lmry_pe_caj_banc_efec_subs_mp'
-            });
+            PARAMETERS.SUBSID = '2';
             //paramMultibook
-            PARAMETERS.MULTIBOOK = objContext.getParameter({
-                name: 'custscript_lmry_pe_caj_banc_efec_mult_mp'
-            });
+            PARAMETERS.MULTIBOOK = ' ';
             //paramrecoid
-            PARAMETERS.RECORDID = objContext.getParameter({
-                name: 'custscript_lmry_pe_caj_banc_efec_reid_mp'
-            });
+            PARAMETERS.RECORDID = '';
 
             //paramTipoExtPeriodo
-            PARAMETERS.TYPE_EXT_PERIOD = objContext.getParameter({
-                name: 'custscript_lmry_pe_caj_banc_efec_extp_mp'
-            });
+            PARAMETERS.TYPE_EXT_PERIOD = '1';
 
             //paramIndicadorOp
-            PARAMETERS.OPERATIONS_INDICATOR = objContext.getParameter({
-                name: 'custscript_lmry_pe_caj_banc_efec_idop_mp'
-            });
+            PARAMETERS.OPERATIONS_INDICATOR ='1';
 
 
 
@@ -509,8 +505,8 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
             var activateSpecialPeriod = false;
             var licenses = new Array();
             if (FEATURES.SUBSID) {
-                licenses = libreriaLicense.getLicenses(PARAMETERS.SUBSID);
-                activateSpecialPeriod = libreriaLicense.getAuthorization(664, licenses);
+                ///licenses = libreriaLicense.getLicenses(PARAMETERS.SUBSID);
+                activateSpecialPeriod = false;
             }
             return activateSpecialPeriod;
         }
@@ -3718,7 +3714,7 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
                     month:MM_inicial,
                     day:DD_inicial
                 },
-                specialName:specialName
+                specialName:specialName,
             }
 
             var param = {
@@ -3728,11 +3724,11 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
                 dataAditional: dataAditional
             }
             var params = {};
-            params['custscript_lmry_pe_param_globales'] = param;
+            params['custscript_smc_pe_param_globales'] = param;
             var RedirecSchdl = task.create({
                 taskType: task.TaskType.SCHEDULED_SCRIPT,
-                scriptId: 'customscript_lmry_pe_cajabanco_efectuada',
-                deploymentId: 'customdeploy_lmry_pe_cajabanco_efectuada',
+                scriptId: 'customscript_smc_pe_cajabanco_efectuada',
+                deploymentId: 'customdeploy_smc_pe_cajabanco_efectuada',
                 params: params
             });
             RedirecSchdl.submit();
@@ -3752,7 +3748,7 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
                 var seed = new Date().getTime();
                 var fileName = 'Temp' + '_' + 'CajaYBancosEfectiva' + '_' + seed + +'_' + cont + '_' + '.txt';
 
-
+                log.debug("Name File :",fileName);
                 // Crea el archivo
                 var transactionsFile = file.create({
                     name: fileName,

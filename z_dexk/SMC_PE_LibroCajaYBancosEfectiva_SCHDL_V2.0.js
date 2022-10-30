@@ -12,11 +12,11 @@
  * @NModuleScope Public
  */
 define(["N/record", "N/runtime", "N/file", "N/search",
-    "N/format", "N/log", "N/config", "./PE_Library_Mensual/LMRY_PE_Reportes_LBRY_V2.0.js"
+    "N/format", "N/log", "N/config"
 ],
 
     function (recordModulo, runtime, fileModulo, search, format, log,
-        config, libreria) {
+        config) {
 
         var objContext = runtime.getCurrentScript();
         // Nombre del Reporte
@@ -40,6 +40,10 @@ define(["N/record", "N/runtime", "N/file", "N/search",
         var multibookName = null;
         var arrPeriodSpecial = new Array();
         var arrTransactions = new Array();
+        var arrPreviousBalance = new Array();
+        var arrMovements = new Array();
+        var arrMovementsPayments = new Array();
+        var arrAccountingContextVerif = new Array();
         var file_size = 7340032;
         var fileNumber = 0;
         var strTransactions = '';
@@ -55,7 +59,7 @@ define(["N/record", "N/runtime", "N/file", "N/search",
             try {
                 getParametersAndFeatures();
                 getTransactions();
-
+                processTransaction();
                 if (arrTransactions.length != 0) {
                     strTransactions = generatedFile(arrTransactions);
 
@@ -65,12 +69,13 @@ define(["N/record", "N/runtime", "N/file", "N/search",
 
                     SaveFile();
                 } else {
-                    NoData();
+                    //NoData();
+                    log.debug("Nodata","Nodata");
                 }
             } catch (error) {
 
-                libreria.sendMail(LMRY_SCRIPT, ' [ execute] ' + error);
-                updateLogGenerator('error');
+                //libreria.sendMail(LMRY_SCRIPT, ' [ execute] ' + error);
+                //updateLogGenerator('error');
                 log.error("[ execute]", error);
             }
 
@@ -78,7 +83,7 @@ define(["N/record", "N/runtime", "N/file", "N/search",
 
         function getParametersAndFeatures() {
             var INFO = objContext.getParameter({
-                name: 'custscript_lmry_pe_param_globales'
+                name: 'custscript_smc_pe_param_globales'
             });
             INFO = JSON.parse(INFO);
             log.debug("Share data", INFO)
@@ -113,8 +118,43 @@ define(["N/record", "N/runtime", "N/file", "N/search",
             }
 
             arrTransactions = JSON.parse(files);
+            log.error("arrTransactions",arrTransactions.length)
 
+            arrTransactions.forEach(function(transaction){
+                if (transaction[11] == 'SALDO INICIAL') {
+                    arrPreviousBalance.push(transaction);
+                } else if (transaction[11] == 'MOVPAY') {
+                    arrMovementsPayments.push(transaction);
+                } else {
+                    arrMovements.push(transaction);
+                }
+            });
 
+        }
+        function processTransaction(){
+            log.debug("arrPreviousBalance", arrPreviousBalance.length);
+            log.debug("arrMovements", arrMovements.length);
+            log.debug("arrMovementsPayments", arrMovementsPayments.length);
+            log.debug("console", "Agrupando saldo inicial...");
+            getVerifiedAccounts();          
+            if (arrAccountingContextVerif.length != 0) {
+                arrPreviousBalance = joinRepeat(arrPreviousBalance);
+            }
+            log.debug("console", "agrupacion terminada");
+            log.debug("console", "Ordenando pago de movimientos...");
+            if (arrMovementsPayments.length!=0) {
+                arrMovementsPayments.sort(function (a, b) {
+                    return a[4] - b[4];
+                });
+            }          
+            log.debug("console", "pago de movimientos ordenados.");
+            log.debug("console", "Agrupando movimientos...");
+            arrMovements = joinMovements(arrMovements, arrMovementsPayments);
+            log.debug("console", "Movimientos Agrupados.");
+            
+            log.debug("console", "Agrupando Total de transacciones...");
+            arrTransactions = joinTransactions(arrPreviousBalance, arrMovements);
+            log.debug("console", "Total de transacciones agrupadas");
         }
         function generatedFile(ArrTemp) {
             var strReturn = '';
@@ -581,6 +621,912 @@ define(["N/record", "N/runtime", "N/file", "N/search",
             return fechaString;
         }
 
+        function getAccountingContext() {
+            // Control de Memoria
+            var arrAccountingContext = new Array();
+            var arrTemp = new Array();
+            var savedsearch = search.load({
+                //LatamReady - Accounting Context
+                id: 'customsearch_lmry_account_context'
+            });
+
+            // Valida si es OneWorld
+            if (FEATURES.SUBSID) {
+                var subsidiFilter = search.createFilter({
+                    name: 'subsidiary',
+                    operator: search.Operator.IS,
+                    values: [PARAMETERS.SUBSID]
+                });
+                savedsearch.filters.push(subsidiFilter);
+            }
+
+            //0 Number
+            //1 Localized Number
+            //2 Localized Display Name
+            //3 Accounting Context
+
+            //4
+            var cod_bank = search.createColumn({
+                name: 'formulatext',
+                summary: search.Summary.GROUP,
+                formula: '{custrecord_lmry_bank_code_acc}'
+            });
+            savedsearch.columns.push(cod_bank);
+
+            //5
+            var Ncta_bank = search.createColumn({
+                name: 'formulatext',
+                summary: search.Summary.GROUP,
+                formula: '{custrecord_lmry_bank_account}'
+            });
+            savedsearch.columns.push(Ncta_bank);
+
+            //6
+            var internalIdColumn = search.createColumn({
+                name: 'internalid',
+                summary: search.Summary.GROUP
+            });
+            savedsearch.columns.push(internalIdColumn);
+
+            //7
+            var sunatHailibtado = search.createColumn({
+                name: 'formulatext',
+                summary: search.Summary.GROUP,
+                formula: "{custrecord_lmry_pe_sunat_cta_habilitado}"
+            });
+            savedsearch.columns.push(sunatHailibtado);
+
+            //8
+            var LatamNumCuenta = search.createColumn({
+                name: 'formulatext',
+                summary: search.Summary.GROUP,
+                formula: "{custrecord_lmry_pe_sunat_cta_codigo}"
+            });
+            savedsearch.columns.push(LatamNumCuenta);
+            //9
+            var NumCuet = search.createColumn({
+                name: 'formulatext',
+                summary: search.Summary.GROUP,
+                formula: "{localizedname}"
+            });
+            savedsearch.columns.push(NumCuet);
+
+            var pageData = savedsearch.runPaged({
+                pageSize: 1000
+            });
+
+            pageData.pageRanges.forEach(function (pageRange) {
+                page = pageData.fetch({
+                    index: pageRange.index
+                });
+                page.data.forEach(function (result) {
+                    var columns = result.columns;
+                    arrTemp = new Array();
+                    for (var col = 0; col < columns.length; col++) {
+                        if (col == 3) {
+                            arrTemp[col] = result.getText(columns[col]);
+                        } else {
+                            arrTemp[col] = result.getValue(columns[col]);
+                        }
+                    }
+
+                    if (arrTemp[3] == multibookName) {
+                        arrAccountingContext.push(arrTemp);
+                    }
+                });
+            });
+
+            return arrAccountingContext;
+        }
+
+        function getCheckAccountExistence() {
+            // Control de Memoria
+            var arrVeriAccount = new Array();
+            var accounts_total = search.create({
+                type: "account",
+                filters: [
+                    ["type", "anyof", "Bank", "AcctRec", "AcctPay", "CredCard"]
+                ],
+                columns: [
+                    // COLUMNA 0
+                    search.createColumn({
+                        name: "internalid"
+                    }),
+
+                    search.createColumn({
+                        name: "displayname",
+                        label: "Display Name"
+                    }),
+
+                    search.createColumn({
+                        name: "name",
+                        label: "Name"
+                    }),
+
+                    search.createColumn({
+                        name: "number",
+                        label: "Number"
+                    }),
+                    search.createColumn({
+                        name: 'formulatext',
+                        formula: '{custrecord_lmry_desp_cta_cont_corporativ}'
+                    })
+                ]
+            });
+            if (FEATURES.SUBSID) {
+                var subsidiFilter = search.createFilter({
+                    name: 'subsidiary',
+                    operator: search.Operator.IS,
+                    values: [PARAMETERS.SUBSID]
+                });
+                accounts_total.filters.push(subsidiFilter);
+            }
+
+            var pageData = accounts_total.runPaged({
+                pageSize: 1000
+            });
+
+            pageData.pageRanges.forEach(function (pageRange) {
+                page = pageData.fetch({
+                    index: pageRange.index
+                });
+                page.data.forEach(function (result) {
+                    var columns = result.columns;
+                    var arrVerifAccount = new Array();
+
+                    //0. Internal id match
+                    if (result.getValue(columns[0]) != null)
+                        arrVerifAccount[0] = result.getValue(columns[0]);
+                    else
+                        arrVerifAccount[0] = '';
+
+                    //1. FormulaText (display name)
+                    if (result.getValue(columns[1]) != null)
+                        arrVerifAccount[1] = result.getValue(columns[1]);
+                    else
+                        arrVerifAccount[1] = '';
+
+                    //2. Name
+                    if (result.getValue(columns[2]) != null)
+                        arrVerifAccount[2] = result.getValue(columns[2]);
+                    else
+                        arrVerifAccount[2] = '';
+
+                    //3. Number
+                    if (result.getValue(columns[3]) != null)
+                        arrVerifAccount[3] = result.getValue(columns[3]);
+                    else
+                        arrVerifAccount[3] = '';
+
+                    // Number Fijooo
+                    if (result.getValue(columns[4]) != null)
+                        arrVerifAccount[4] = result.getValue(columns[4]);
+                    else
+                        arrVerifAccount[4] = '';
+
+                    arrVeriAccount.push(arrVerifAccount);
+                });
+            });
+            return arrVeriAccount;
+        }
+        function getVerifiedAccounts() {
+            var arrAccountingContext = getAccountingContext();
+            var arrVeriAccount = getCheckAccountExistence();
+
+            for (var i = 0; i < arrAccountingContext.length; i++) {
+                for (var j = 0; j < arrVeriAccount.length; j++) {
+                    //compara localized number y localized name
+                    if (arrAccountingContext[i][1] == arrVeriAccount[j][4]) {
+                        arrAccountingContext[i][10] = arrVeriAccount[j][0];
+                        arrAccountingContextVerif.push(arrAccountingContext[i]);
+                        break;
+                    }
+                }
+            }
+
+        }
+
+        function joinRepeat(previousBalance) {
+            var newPreviousBalance = [];
+            var long = previousBalance.length;
+            var i = 0;
+
+            while (i < long) {
+                var montoAcumulado = Number(previousBalance[i][13]);
+                var montoAcumulado2 = Number(previousBalance[i][14]);
+                var j = i + 1;
+                while (j < long) {
+                    if (previousBalance[i][0] == previousBalance[j][0]) {
+                        montoAcumulado += Number(previousBalance[j][13]);
+                        montoAcumulado2 += Number(previousBalance[j][14]);
+                        previousBalance.splice(j, 1);
+                        long--;
+                    } else {
+                        j++;
+                    }
+                }
+                previousBalance[i][13] = (montoAcumulado).toFixed(2);
+                previousBalance[i][14] = (montoAcumulado2).toFixed(2);
+                newPreviousBalance.push(previousBalance[i]);
+                i++;
+            }
+            return newPreviousBalance;
+        }
+        
+        function joinMovements(arrMovements, arrMovementsPayments) {
+            var arrTemp = new Array();
+            var arrReturn = new Array();
+            
+            if (arrMovements.length != 0 && arrMovementsPayments.length != 0) {
+                
+                arrMovements.forEach(function(movements){
+                    arrMovementsPayments.forEach(function(movementsPayments){
+                        if (movementsPayments[0] == movements[15]) {
+                            var arrAux = new Array();
+                            arrAux[0] = movements[0];
+                            arrAux[1] = movements[1];
+                            arrAux[2] = movements[2];
+                            arrAux[3] = movements[3];
+                            arrAux[4] = movements[4];
+                            arrAux[5] = movementsPayments[2];
+                            arrAux[6] = movementsPayments[3];
+                            arrAux[7] = movementsPayments[4];
+                            arrAux[8] = movements[8];
+                            arrAux[9] = movementsPayments[5];
+                            arrAux[10] = movements[10];
+                            arrAux[11] = movements[11];
+                            arrAux[12] = movements[12];
+                            arrAux[13] = movementsPayments[6];
+                            arrAux[14] = movementsPayments[7];
+                            arrAux[15] = movements[15];
+                            arrAux[21] = movements[21];
+                            arrAux[22] = movementsPayments[10];
+                            arrAux[23] = movements[23];
+                            arrTemp.push(arrAux);
+                        }
+                    });
+                });
+                var flag;
+                arrMovements.forEach(function(movements){
+                    flag = false;
+                    arrTemp.forEach(function(temp){
+                        if (movements[15] == temp[15]) {
+                            flag = true;                    
+                            arrReturn.push(temp);
+                        }
+                    });
+
+                    if (!flag) {                     
+                        arrReturn.push(movements);
+                    }
+                });
+            } else {
+                arrReturn = arrMovements;
+            }
+
+            return arrReturn;
+        }
+
+        function joinTransactions(arrPreviousBalance, arrMovements) {
+            var cont = 0;
+            var arrTransactions = new Array();
+            var periodStartDateTranform = transformDate(periodStartDate);
+            var periodEndDateTranform = transformDate(periodEndDate)
+            if (arrPreviousBalance.length != 0 && arrMovements.length != 0) {
+                for (var i = 0; i < arrPreviousBalance.length; i++) {
+                    var arrIni = new Array();
+
+                    var saldoInicialNumber = Number(arrPreviousBalance[i][13]) - Number(arrPreviousBalance[i][14]);
+                    if (saldoInicialNumber > 0) {
+                        arrPreviousBalance[i][13] = saldoInicialNumber;
+                        arrPreviousBalance[i][14] = 0;
+                    } else {
+                        arrPreviousBalance[i][13] = 0;
+                        arrPreviousBalance[i][14] = Number(saldoInicialNumber) * (-1);
+                    }
+
+                    arrIni[0] = arrPreviousBalance[i][0];
+                    arrIni[1] = arrPreviousBalance[i][1];
+                    arrIni[2] = '';
+                    arrIni[3] = arrPreviousBalance[i][3];
+                    arrIni[4] = arrPreviousBalance[i][4];
+                    arrIni[5] = '00';
+                    arrIni[6] = '';
+                    arrIni[7] = '0';
+                    arrIni[8] = periodStartDateTranform;
+                    arrIni[9] = '';
+                    arrIni[10] = periodStartDateTranform;
+                    arrIni[11] = arrPreviousBalance[i][11];
+                    arrIni[12] = arrPreviousBalance[i][12];
+                    arrIni[13] = Number(arrPreviousBalance[i][13]).toFixed(2);
+                    arrIni[14] = Number(arrPreviousBalance[i][14]).toFixed(2);
+                    arrIni[15] = arrPreviousBalance[i][15];
+                    arrIni[16] = 'A';
+
+                    arrTransactions[cont] = arrIni;
+
+                    arrTransactions[cont][0] = 'SI' + arrTransactions[cont][0];
+                    
+                    var since = cont;
+                    cont++;
+
+                    for (var j = 0; j < arrMovements.length; j++) {
+
+                        if (arrAccountingContextVerif.length != 0) {
+                            if (arrPreviousBalance[i][0] == arrMovements[j][0]) {
+                                var arrMov = new Array();
+
+                                arrMov[0] = arrMovements[j][0];
+                                arrMov[1] = arrMovements[j][1];
+                                arrMov[2] = arrMovements[j][2];
+                                arrMov[3] = arrMovements[j][3];
+                                //arrMov[4] = arrMovimientos[j][4];
+                                arrMov[4] = arrPreviousBalance[i][4];
+                                arrMov[5] = arrMovements[j][5];
+                                arrMov[6] = arrMovements[j][6];
+                                arrMov[7] = arrMovements[j][7];
+                                arrMov[8] = arrMovements[j][8];
+                                arrMov[9] = arrMovements[j][9];
+                                arrMov[10] = arrMovements[j][10];
+                                arrMov[11] = arrMovements[j][11];
+                                arrMov[12] = arrMovements[j][12];
+                                arrMov[13] = arrMovements[j][13];
+                                arrMov[14] = arrMovements[j][14];
+                                arrMov[15] = arrMovements[j][15];
+                                arrMov[16] = 'M';
+                                arrMov[17] = arrMovements[j][21];
+                                arrMov[18] = arrMovements[j][22];
+
+                                arrTransactions[cont] = arrMov;
+                                
+                                cont++;
+                                
+                            }
+                        } else if (arrPreviousBalance[i][15] == arrMovements[j][4]) {
+                            var arrMov = new Array();
+
+                            arrMov[0] = arrMovements[j][0];
+                            arrMov[1] = arrMovements[j][1];
+                            arrMov[2] = arrMovements[j][2];
+                            arrMov[3] = arrMovements[j][3];
+                            //arrMov[4] = arrMovimientos[j][4];
+                            arrMov[4] = arrPreviousBalance[i][4];
+                            arrMov[5] = arrMovements[j][5];
+                            arrMov[6] = arrMovements[j][6];
+                            arrMov[7] = arrMovements[j][7];
+                            arrMov[8] = arrMovements[j][8];
+                            arrMov[9] = arrMovements[j][9];
+                            arrMov[10] = arrMovements[j][10];
+                            arrMov[11] = arrMovements[j][11];
+                            arrMov[12] = arrMovements[j][12];
+                            arrMov[13] = arrMovements[j][13];
+                            arrMov[14] = arrMovements[j][14];
+                            arrMov[15] = arrMovements[j][15];
+                            arrMov[16] = 'M';
+                            arrMov[17] = arrMovements[j][21];
+                            arrMov[18] = arrMovements[j][22];
+
+                            arrTransactions[cont] = arrMov;
+                            
+                            cont++;
+                            
+                        }
+                    }
+                   
+                    var sumColum13 = 0.00;
+                    var sumColum14 = 0.00;
+
+                    for (var k = since; k < arrTransactions.length; k++) {
+                        sumColum13 += Number(arrTransactions[k][13]);
+                        sumColum14 += Number(arrTransactions[k][14]);
+                    }
+                    var saldoFinalNumber = Number(sumColum13) - Number(sumColum14);
+
+                    if (saldoFinalNumber > 0) {
+                        sumColum13 = saldoFinalNumber;
+                        sumColum14 = 0;
+                    } else {
+                        sumColum13 = 0;
+                        sumColum14 = Number(saldoFinalNumber) * (-1);
+
+                    }
+
+                    var arrTemp = new Array();
+                    arrTemp[0] = 'SF' + arrTransactions[since][0].substring(2, arrTransactions[since][0].length);
+                    arrTemp[1] = arrTransactions[since][1];
+                    arrTemp[2] = '';
+                    arrTemp[3] = arrTransactions[since][3];
+                    arrTemp[4] = arrTransactions[since][4];
+                    arrTemp[5] = '00';
+                    arrTemp[6] = '';
+                    arrTemp[7] = '0';
+                    arrTemp[8] = periodEndDateTranform;
+                    arrTemp[9] = '';
+                    arrTemp[10] = periodEndDateTranform;
+                    arrTemp[11] = 'SALDO FINAL';
+                    arrTemp[12] = arrTransactions[since][12];
+                    arrTemp[13] = sumColum13.toFixed(2);
+                    arrTemp[14] = sumColum14.toFixed(2);
+                    arrTemp[15] = arrTransactions[since][15];
+                    arrTemp[16] = 'C';
+
+                    arrTransactions[cont] = arrTemp;
+                    
+                    cont++;
+                    since = cont;
+                }
+
+                var flag = true;
+                var arrLast = new Array();
+                var currency = '';
+                var currencyAnterior = '';
+                var key = 0;
+                for (var i = 0; i < arrMovements.length; i++) {
+                    var sumColum13 = 0.00;
+                    var sumColum14 = 0.00;
+
+                    for (var j = 0; j < arrPreviousBalance.length; j++) {
+                        if (arrMovements[i][0] == arrPreviousBalance[j][0]) {
+                            break;
+                        } else {
+                            if (j == arrPreviousBalance.length - 1) {
+                                currency = arrMovements[i][23];
+                                if (arrTransactions[arrTransactions.length - 1][0] != arrMovements[i][0]) {
+                                    //TODO: add SF
+                                    if (!flag) {
+                                        var arrTemp = new Array();
+                                        arrTemp[0] = 'SF' + arrMovements[key][0];
+                                        arrTemp[1] = arrMovements[key][1];
+                                        arrTemp[2] = '';
+                                        arrTemp[3] = arrMovements[key][3];
+                                        //arrTemp[4] = arrMovimientos[i-1][4];
+                                        arrTemp[4] = currencyAnterior;
+                                        arrTemp[5] = '00';
+                                        arrTemp[6] = '';
+                                        arrTemp[7] = '0';
+                                        arrTemp[8] = periodEndDateTranform;
+                                        arrTemp[9] = '';
+                                        arrTemp[10] = periodEndDateTranform;
+                                        arrTemp[11] = 'SALDO FINAL';
+                                        arrTemp[12] = arrMovements[key][12];
+                                        arrTemp[13] = sumColum13.toFixed(2);
+                                        arrTemp[14] = sumColum14.toFixed(2);
+                                        arrTemp[15] = arrMovements[key][15];
+                                        arrTemp[16] = 'C';
+
+                                        arrTransactions[cont] = arrTemp;
+                                       
+                                        cont++;
+                                        
+                                        sumColum13 = 0.00;
+                                        sumColum14 = 0.00;
+                                    }
+                                    //TODO: add SI
+                                    var arrInicial = new Array();
+
+                                    arrInicial[0] = arrMovements[i][0];
+                                    arrInicial[1] = arrMovements[i][1];
+                                    arrInicial[2] = '';
+                                    arrInicial[3] = arrMovements[i][3];
+                                    //arrInicial[4] = arrMovimientos[i][4];
+                                    arrInicial[4] = currency;
+                                    arrInicial[5] = '00';
+                                    arrInicial[6] = '';
+                                    arrInicial[7] = '0';
+                                    arrInicial[8] = periodStartDateTranform;
+                                    arrInicial[9] = '';
+                                    arrInicial[10] = periodStartDateTranform;
+                                    arrInicial[11] = 'SALDO INICIAL';
+                                    arrInicial[12] = arrMovements[i][12];
+                                    arrInicial[13] = 0.00;
+                                    arrInicial[14] = 0.00;
+                                    arrInicial[15] = arrMovements[i][15];
+                                    arrInicial[16] = 'A';
+
+                                    arrTransactions[cont] = arrInicial;
+                                    
+                                    arrTransactions[cont][0] = 'SI' + arrTransactions[cont][0];
+                                    key = i;
+                                    
+                                    cont++;
+
+                                    var arrMov = new Array();
+
+                                    arrMov[0] = arrMovements[i][0];
+                                    arrMov[1] = arrMovements[i][1];
+                                    arrMov[2] = arrMovements[i][2];
+                                    arrMov[3] = arrMovements[i][3];
+                                    //arrMov[4] = arrMovimientos[i][4];
+                                    arrMov[4] = currency;
+                                    arrMov[5] = arrMovements[i][5];
+                                    arrMov[6] = arrMovements[i][6];
+                                    arrMov[7] = arrMovements[i][7];
+                                    arrMov[8] = arrMovements[i][8];
+                                    arrMov[9] = arrMovements[i][9];
+                                    arrMov[10] = arrMovements[i][10];
+                                    arrMov[11] = arrMovements[i][11];
+                                    arrMov[12] = arrMovements[i][12];
+                                    arrMov[13] = arrMovements[i][13];
+                                    arrMov[14] = arrMovements[i][14];
+                                    arrMov[15] = arrMovements[i][15];
+                                    arrMov[16] = 'M';
+                                    arrMov[17] = arrMovements[i][21];
+                                    arrMov[18] = arrMovements[i][22];
+
+                                    sumColum13 += arrMovements[i][13];
+                                    sumColum14 += arrMovements[i][14];
+
+                                    arrLast = arrMov;
+                                    arrTransactions[cont] = arrMov;
+                                    
+                                    cont++;
+                                    
+                                } else {
+                                    var arrMov = new Array();
+
+                                    arrMov[0] = arrMovements[i][0];
+                                    arrMov[1] = arrMovements[i][1];
+                                    arrMov[2] = arrMovements[i][2];
+                                    arrMov[3] = arrMovements[i][3];
+                                    //arrMov[4] = arrMovimientos[i][4];
+                                    arrMov[4] = currency;
+                                    arrMov[5] = arrMovements[i][5];
+                                    arrMov[6] = arrMovements[i][6];
+                                    arrMov[7] = arrMovements[i][7];
+                                    arrMov[8] = arrMovements[i][8];
+                                    arrMov[9] = arrMovements[i][9];
+                                    arrMov[10] = arrMovements[i][10];
+                                    arrMov[11] = arrMovements[i][11];
+                                    arrMov[12] = arrMovements[i][12];
+                                    arrMov[13] = arrMovements[i][13];
+                                    arrMov[14] = arrMovements[i][14];
+                                    arrMov[15] = arrMovements[i][15];
+                                    arrMov[16] = 'M';
+                                    arrMov[17] = arrMovements[i][21];
+                                    arrMov[18] = arrMovements[i][22];
+
+                                    sumColum13 += arrMovements[i][13];
+                                    sumColum14 += arrMovements[i][14];
+
+                                    arrLast = arrMov;
+                                    arrTransactions[cont] = arrMov;
+                                    
+                                    cont++;
+                                    
+                                }
+                                currencyAnterior = currency;
+                                flag = false;
+                            }
+                        }
+                    }
+                }
+
+                if (arrLast.length != 0) {
+                    var sumColum13Last = 0.00;
+                    var sumColum14Last = 0.00;
+
+                    for (var k = arrTransactions.length - 1; k >= 0; k--) {
+                        if (arrTransactions[k][0].substring(0, 2) == 'SI') {
+                            break;
+                        } else {
+                            sumColum13Last += Number(arrTransactions[k][13]);
+                            sumColum14Last += Number(arrTransactions[k][14]);
+                        }
+
+                    }
+
+                    var saldoFinalNumber = Number(sumColum13Last) - Number(sumColum14Last);
+
+                    if (saldoFinalNumber > 0) {
+                        sumColum13Last = saldoFinalNumber;
+                        sumColum14Last = 0;
+                    } else {
+                        sumColum13Last = 0;
+                        sumColum14Last = Number(saldoFinalNumber) * (-1);
+                    }
+
+                    var arrTemp = new Array();
+                    arrTemp[0] = 'SF' + arrLast[0];
+                    arrTemp[1] = arrLast[1];
+                    arrTemp[2] = '';
+                    arrTemp[3] = arrLast[3];
+                    arrTemp[4] = arrLast[4];
+                    arrTemp[5] = '00';
+                    arrTemp[6] = '';
+                    arrTemp[7] = '0';
+                    arrTemp[8] = periodEndDateTranform;
+                    arrTemp[9] = '';
+                    arrTemp[10] = periodEndDateTranform;
+                    arrTemp[11] = 'SALDO FINAL';
+                    arrTemp[12] = arrLast[12];
+                    arrTemp[13] = sumColum13Last.toFixed(2);
+                    arrTemp[14] = sumColum14Last.toFixed(2);
+                    arrTemp[15] = arrLast[15];
+                    arrTemp[16] = 'C';
+
+                    arrTransactions[cont] = arrTemp;
+                    
+                    cont++;
+                }
+
+            } else if (arrMovements.length != 0 && arrPreviousBalance.length == 0) {
+                var pivote = arrMovements[0][0];
+                var currency = arrMovements[0][23];
+                var currencyAnterior = '';
+                var arrInicial = new Array();
+
+                arrInicial[0] = 'SI' + arrMovements[0][0];
+                arrInicial[1] = arrMovements[0][1];
+                arrInicial[2] = '';
+                arrInicial[3] = arrMovements[0][3];
+                arrInicial[4] = currency;
+                arrInicial[5] = '00';
+                arrInicial[6] = '';
+                arrInicial[7] = '0';
+                arrInicial[8] = periodStartDateTranform;
+                arrInicial[9] = '';
+                arrInicial[10] = periodStartDateTranform;
+                arrInicial[11] = 'SALDO INICIAL';
+                arrInicial[12] = arrMovements[0][12];
+                arrInicial[13] = 0.00;
+                arrInicial[14] = 0.00;
+                arrInicial[15] = arrMovements[0][15];
+                arrInicial[16] = 'A';
+
+                arrTransactions[cont] = arrInicial;
+                
+                var since = cont;
+                cont++;
+
+                for (var i = 0; i < arrMovements.length; i++) {
+                    if (pivote == arrMovements[i][0]) {
+                        var arrMov = new Array();
+                        arrMov[0] = arrMovements[i][0];
+                        arrMov[1] = arrMovements[i][1];
+                        arrMov[2] = arrMovements[i][2];
+                        arrMov[3] = arrMovements[i][3];
+                        arrMov[4] = currency;
+                        arrMov[5] = arrMovements[i][5];
+                        arrMov[6] = arrMovements[i][6];
+                        arrMov[7] = arrMovements[i][7];
+                        arrMov[8] = arrMovements[i][8];
+                        arrMov[9] = arrMovements[i][9];
+                        arrMov[10] = arrMovements[i][10];
+                        arrMov[11] = arrMovements[i][11];
+                        arrMov[12] = arrMovements[i][12];
+                        arrMov[13] = arrMovements[i][13];
+                        arrMov[14] = arrMovements[i][14];
+                        arrMov[15] = arrMovements[i][15];
+                        arrMov[16] = 'M';
+                        arrMov[17] = arrMovements[i][21];
+                        arrMov[18] = arrMovements[i][22];
+                        arrTransactions[cont] = arrMov;
+                        
+                        cont++;
+                        
+                    } else {
+                        //Linea Saldo Final
+                        var arrTempSF = new Array();
+
+                        var sumColum13 = 0.00;
+                        var sumColum14 = 0.00;
+
+                        currencyAnterior = currency;
+                        currency = arrMovements[i][23];
+
+                        for (var k = since; k < arrTransactions.length; k++) {
+                            sumColum13 += Number(arrTransactions[k][13]);
+                            sumColum14 += Number(arrTransactions[k][14]);
+                        }
+
+                        var saldoFinalNumber = Number(sumColum13) - Number(sumColum14);
+
+                        if (saldoFinalNumber > 0) {
+                            sumColum13 = saldoFinalNumber;
+                            sumColum14 = 0;
+                        } else {
+                            sumColum13 = 0;
+                            sumColum14 = Number(saldoFinalNumber) * (-1);
+                        }
+
+                        arrTempSF[0] = 'SF' + arrMovements[i - 1][0];
+                        arrTempSF[1] = arrMovements[i - 1][1];
+                        arrTempSF[2] = '';
+                        arrTempSF[3] = arrMovements[i - 1][3];
+                        arrTempSF[4] = currencyAnterior;
+                        arrTempSF[5] = '00';
+                        arrTempSF[6] = '';
+                        arrTempSF[7] = '0';
+                        arrTempSF[8] = periodEndDateTranform;
+                        arrTempSF[9] = '';
+                        arrTempSF[10] = periodEndDateTranform;
+                        arrTempSF[11] = 'SALDO FINAL';
+                        arrTempSF[12] = arrMovements[i - 1][12];
+                        arrTempSF[13] = sumColum13.toFixed(2);
+                        arrTempSF[14] = sumColum14.toFixed(2);
+                        arrTempSF[15] = arrMovements[i - 1][15];
+                        arrTempSF[16] = 'C';
+
+                        arrTransactions[cont] = arrTempSF;
+                        
+                        cont++;
+                        since = cont;
+
+                        //Linea Saldo Inicial
+                        var arrTempSI = new Array();
+                        arrTempSI[0] = 'SI' + arrMovements[i][0];
+                        arrTempSI[1] = arrMovements[i][1];
+                        arrTempSI[2] = '';
+                        arrTempSI[3] = arrMovements[i][3];
+                        arrTempSI[4] = currency;
+                        arrTempSI[5] = '00';
+                        arrTempSI[6] = '';
+                        arrTempSI[7] = '0';
+                        arrTempSI[8] = periodStartDateTranform;
+                        arrTempSI[9] = '';
+                        arrTempSI[10] = periodStartDateTranform;
+                        arrTempSI[11] = 'SALDO INICIAL';
+                        arrTempSI[12] = arrMovements[i][12];
+                        arrTempSI[13] = 0.00;
+                        arrTempSI[14] = 0.00;
+                        arrTempSI[15] = arrMovements[i][15];
+                        arrTempSI[16] = 'A';
+
+                        arrTransactions[cont] = arrTempSI;
+                        
+                        cont++;
+
+                        arrTransactions[cont] = arrMovements[i];
+                        arrTransactions[cont][4] = currency;
+                        arrTransactions[cont][16] = 'M';
+                        arrTransactions[cont][17] = arrMovements[i][21];
+
+                        cont++;
+
+                        pivote = arrMovements[i][0];
+                    }
+
+                    if (i == arrMovements.length - 1) {
+                        var arrTempSF = new Array();
+
+                        var sumColum13 = 0.00;
+                        var sumColum14 = 0.00;
+
+                        for (var k = since; k < arrTransactions.length; k++) {
+                            sumColum13 += Number(arrTransactions[k][13]);
+                            sumColum14 += Number(arrTransactions[k][14]);
+                        }
+
+                        var saldoFinalNumber = Number(sumColum13) - Number(sumColum14);
+
+                        if (saldoFinalNumber > 0) {
+                            sumColum13 = saldoFinalNumber;
+                            sumColum14 = 0;
+                        } else {
+                            sumColum13 = 0;
+                            sumColum14 = Number(saldoFinalNumber) * (-1);
+
+                        }
+
+                        arrTempSF[0] = 'SF' + arrMovements[i][0];
+                        arrTempSF[1] = arrMovements[i][1];
+                        arrTempSF[2] = '';
+                        arrTempSF[3] = arrMovements[i][3];
+                        arrTempSF[4] = currency;
+                        arrTempSF[5] = '00';
+                        arrTempSF[6] = '';
+                        arrTempSF[7] = '0';
+                        arrTempSF[8] = periodEndDateTranform;
+                        arrTempSF[9] = '';
+                        arrTempSF[10] = periodEndDateTranform;
+                        arrTempSF[11] = 'SALDO FINAL';
+                        arrTempSF[12] = arrMovements[i][12];
+                        arrTempSF[13] = sumColum13.toFixed(2);
+                        arrTempSF[14] = sumColum14.toFixed(2);
+                        arrTempSF[15] = arrMovements[i][15];
+                        arrTempSF[16] = 'C';
+
+                        arrTransactions[cont] = arrTempSF;
+                        
+                    }
+                }
+
+            } else if (arrPreviousBalance.length != 0 && arrMovements.length == 0) {
+
+                for (var i = 0; i < arrPreviousBalance.length; i++) {
+                    var arrIni = new Array();
+
+                    var saldoInicialNumber = Number(arrPreviousBalance[i][13]) - Number(arrPreviousBalance[i][14]);
+                    if (saldoInicialNumber > 0) {
+                        arrPreviousBalance[i][13] = saldoInicialNumber;
+                        arrPreviousBalance[i][14] = 0;
+                    } else {
+                        arrPreviousBalance[i][13] = 0;
+                        arrPreviousBalance[i][14] = Number(saldoInicialNumber) * (-1);
+                    }
+
+                    arrIni[0] = arrPreviousBalance[i][0];
+                    arrIni[1] = arrPreviousBalance[i][1];
+                    arrIni[2] = '';
+                    arrIni[3] = arrPreviousBalance[i][3];
+                    arrIni[4] = arrPreviousBalance[i][4];
+                    arrIni[5] = '00';
+                    arrIni[6] = '';
+                    arrIni[7] = '0';
+                    arrIni[8] = periodStartDateTranform;
+                    arrIni[9] = '';
+                    arrIni[10] = periodStartDateTranform;
+                    arrIni[11] = 'SALDO INICIAL';
+                    arrIni[12] = arrPreviousBalance[i][12];
+                    arrIni[13] = Number(arrPreviousBalance[i][13]).toFixed(2);
+                    arrIni[14] = Number(arrPreviousBalance[i][14]).toFixed(2);
+                    arrIni[15] = arrPreviousBalance[i][15];
+                    arrIni[16] = 'A';
+                    arrTransactions[cont] = arrIni;
+                    arrTransactions[cont][0] = 'SI' + arrTransactions[cont][0];
+                    
+                    var since = cont;
+
+                    cont++;
+
+                    var saldoFinalNumber = Number(arrPreviousBalance[i][13]) - Number(arrPreviousBalance[i][14]);
+                    if (saldoFinalNumber > 0) {
+                        sumColum13 = saldoFinalNumber;
+                        sumColum14 = 0;
+                    } else {
+                        sumColum13 = 0;
+                        sumColum14 = Number(saldoFinalNumber) * (-1);
+                    }
+
+                    var arrTemp = new Array();
+                    arrTemp[0] = 'SF' + arrTransactions[since][0].substring(2, arrTransactions[since][0].length);
+                    arrTemp[1] = arrTransactions[since][1];
+                    arrTemp[2] = '';
+                    arrTemp[3] = arrTransactions[since][3];
+                    arrTemp[4] = arrTransactions[since][4];
+                    arrTemp[5] = '00';
+                    arrTemp[6] = '';
+                    arrTemp[7] = '0';
+                    arrTemp[8] = periodEndDateTranform;
+                    arrTemp[9] = '';
+                    arrTemp[10] = periodEndDateTranform;
+                    arrTemp[11] = 'SALDO FINAL';
+                    arrTemp[12] = arrTransactions[since][12];
+                    arrTemp[13] = sumColum13.toFixed(2);
+                    arrTemp[14] = sumColum14.toFixed(2);
+                    arrTemp[15] = arrTransactions[since][15];
+                    arrTemp[16] = 'C';
+
+                    arrTransactions[cont] = arrTemp;
+                    
+                    cont++;
+                }
+            }
+            
+            return arrTransactions;
+
+        }
+
+        function transformDate(date) {
+            var parsedDateStringAsRawDateObject = format.parse({
+                value: date,
+                type: format.Type.DATE
+            });
+
+            var MM = parsedDateStringAsRawDateObject.getMonth() + 1;
+            var AAAA = parsedDateStringAsRawDateObject.getFullYear();
+            var DD = parsedDateStringAsRawDateObject.getDate();
+
+            if (('' + MM).length == 1) {
+                MM = '0' + MM;
+            }
+
+            if (('' + DD).length == 1) {
+                DD = '0' + DD;
+            }
+
+            return DD + '/' + MM + '/' + AAAA;
+        }
         function validateAccents(s) {
             var AccChars = "ŠŽšžŸÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖÙÚÛÜÝàáâãäåçèéêëìíîïðñòóôõöùúûüýÿ°–—ªº·@´%!¡.$&¿?Ñ|";
             var RegChars = "SZszYAAAAAACEEEEIIIIDNOOOOOUUUUYaaaaaaceeeeiiiidnooooouuuuyyo--ao.       Y  N ";
@@ -614,7 +1560,7 @@ define(["N/record", "N/runtime", "N/file", "N/search",
                 var NameFile;
 
                 fileext = '.txt';
-                NameFile = Name_File() + fileext;
+                NameFile = Name_File()+'_test'+ fileext;
                 // Crea el archivo
                 var file = fileModulo.create({
                     name: NameFile,
@@ -641,77 +1587,78 @@ define(["N/record", "N/runtime", "N/file", "N/search",
                 }
 
                 urlfile += idfile2.url;
-
+                log.debug("urlfile",urlfile)
+                log.debug("NameFile",NameFile)
                 //Genera registro personalizado como log
-                if (idfile) {
-                    var usuarioTemp = runtime.getCurrentUser();
-                    var usuario = usuarioTemp.name;
+                // if (idfile) {
+                //     var usuarioTemp = runtime.getCurrentUser();
+                //     var usuario = usuarioTemp.name;
 
-                    if (arrPeriodSpecial.length > 0) {
-                        periodName = specialName;
-                    }
+                //     if (arrPeriodSpecial.length > 0) {
+                //         periodName = specialName;
+                //     }
 
-                    if (PARAMETERS.RECORDID != null) {
-                        var record = recordModulo.load({
-                            type: 'customrecord_lmry_pe_2016_rpt_genera_log',
-                            id: PARAMETERS.RECORDID
-                        });
-                    } else {
-                        var record = recordModulo.create({
-                            type: 'customrecord_lmry_pe_2016_rpt_genera_log'
-                        });
-                    }
+                //     if (PARAMETERS.RECORDID != null) {
+                //         var record = recordModulo.load({
+                //             type: 'customrecord_lmry_pe_2016_rpt_genera_log',
+                //             id: PARAMETERS.RECORDID
+                //         });
+                //     } else {
+                //         var record = recordModulo.create({
+                //             type: 'customrecord_lmry_pe_2016_rpt_genera_log'
+                //         });
+                //     }
 
-                    //Nombre de Archivo
-                    record.setValue({
-                        fieldId: 'custrecord_lmry_pe_2016_rg_name',
-                        value: NameFile
-                    });
+                //     //Nombre de Archivo
+                //     record.setValue({
+                //         fieldId: 'custrecord_lmry_pe_2016_rg_name',
+                //         value: NameFile
+                //     });
 
-                    //Url de Archivo
-                    record.setValue({
-                        fieldId: 'custrecord_lmry_pe_2016_rg_url_file',
-                        value: urlfile
-                    });
+                //     //Url de Archivo
+                //     record.setValue({
+                //         fieldId: 'custrecord_lmry_pe_2016_rg_url_file',
+                //         value: urlfile
+                //     });
 
-                    //Nombre de Reporte
-                    record.setValue({
-                        fieldId: 'custrecord_lmry_pe_2016_rg_transaction',
-                        value: NAME_REPORT
-                    });
+                //     //Nombre de Reporte
+                //     record.setValue({
+                //         fieldId: 'custrecord_lmry_pe_2016_rg_transaction',
+                //         value: NAME_REPORT
+                //     });
 
-                    //Nombre de Subsidiaria
-                    record.setValue({
-                        fieldId: 'custrecord_lmry_pe_2016_rg_subsidiary',
-                        value: COMPANY.NAME
-                    });
+                //     //Nombre de Subsidiaria
+                //     record.setValue({
+                //         fieldId: 'custrecord_lmry_pe_2016_rg_subsidiary',
+                //         value: COMPANY.NAME
+                //     });
 
-                    //Periodo
-                    record.setValue({
-                        fieldId: 'custrecord_lmry_pe_2016_rg_postingperiod',
-                        value: periodName
-                    });
+                //     //Periodo
+                //     record.setValue({
+                //         fieldId: 'custrecord_lmry_pe_2016_rg_postingperiod',
+                //         value: periodName
+                //     });
 
-                    //Multibook
-                    if (FEATURES.MULTIBOOK || FEATURES.MULTIBOOK == 'T') {
-                        record.setValue({
-                            fieldId: 'custrecord_lmry_pe_rg_multibook',
-                            value: multibookName
-                        });
-                    }
+                //     //Multibook
+                //     if (FEATURES.MULTIBOOK || FEATURES.MULTIBOOK == 'T') {
+                //         record.setValue({
+                //             fieldId: 'custrecord_lmry_pe_rg_multibook',
+                //             value: multibookName
+                //         });
+                //     }
 
-                    //Creado Por
-                    record.setValue({
-                        fieldId: 'custrecord_lmry_pe_2016_rg_employee',
-                        value: usuario
-                    });
+                //     //Creado Por
+                //     record.setValue({
+                //         fieldId: 'custrecord_lmry_pe_2016_rg_employee',
+                //         value: usuario
+                //     });
 
-                    var recordId = record.save();
+                //     var recordId = record.save();
 
 
-                    // Envia mail de conformidad al usuario
-                    libreria.sendrptuser(NAME_REPORT, 3, NameFile);
-                }
+                //     // Envia mail de conformidad al usuario
+                //     libreria.sendrptuser(NAME_REPORT, 3, NameFile);
+                // }
             } else {
                 // Debug
                 log.error({

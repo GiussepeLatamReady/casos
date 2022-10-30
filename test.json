@@ -1,0 +1,35 @@
+{
+  "parameters": {
+    "PERIOD": "132",
+    "CLOSED_PERIOD": "F",
+    "SUBSID": "2",
+    "MULTIBOOK": " ",
+    "RECORDID": "1466",
+    "TYPE_EXT_PERIOD": "1",
+    "OPERATIONS_INDICATOR": "1",
+    "FILES": [
+      35236
+    ]
+  },
+  "features": {
+    "SUBSID": true,
+    "MULTIBOOK": false,
+    "CLASS": true,
+    "DEPARTMENT": true
+  },
+  "company": {
+    "NAME": "Vesalio S.A.",
+    "RUC": "20100178401"
+  },
+  "dataAditional": {
+    "periodEndDate": "31/10/2022",
+    "periodStartDate": "01/10/2022",
+    "periodName": "Oct 2022",
+    "arrPeriodSpecial": [],
+    "dateEspecial": {
+      "year": "ANHO",
+      "month": "MES",
+      "day": "DIA"
+    }
+  }
+}
