@@ -48,13 +48,12 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
         var DD_final;
         var specialName;//*
         var arrAccountingContextVerif = new Array();
-
-
+        var arrTransactions = new Array();
+        var range = 500;
         var arrAccounts = new Array();
         function getInputData() {
             try {
                 
-                var arrTransactions = new Array();
                 getParametersAndFeatures();
                 getSubisidiaryData();
                 log.debug('Parametros:', PARAMETERS);
@@ -73,10 +72,9 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
                 log.debug("arrMovementsPayExpRep",arrMovementsPayExpRep.length)
                 arrTransactions = arrTransactions.concat(arrPreviousBalance, arrMovements, arrMovementsPayments,arrMovementsPayExpRep);
                 log.debug("arrTransactions",arrTransactions.length)
-                
 
-               
-               
+                recallControl();
+                
                 return arrTransactions;
                 //return [];
             } catch (err) {
@@ -90,84 +88,101 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
             }
         }
 
+
         function map(context) {
             try {
                 var dataInput = JSON.parse(context.value);
-                var key;
-                if (dataInput[11] == 'SALDO INICIAL') {
-                    key = 'previousBalance';
-                } else if (dataInput[11] == 'MOVPAY') {
-                    key = 'movementsPayments';
-                } else {
-                    key = 'movements';
-                }
+                
                 if (dataInput["isError"] == "T") {
                     context.write({
                         key: context.key,
-                        value: dataInput
+                        value: {
+                            arrTransactions: dataInput
+                        }
                     });
                 } else {
-                    getParametersAndFeatures();
-                    if (FEATURES.MULTIBOOK || FEATURES.MULTIBOOK == 'T') {
-                        getVerifiedAccounts();
-                    }
-
-                    dataInput = cleanData(dataInput);
                     
-                    if (key == 'previousBalance') {
-                        
-                        dataInput[4] = getCurrencyName(dataInput[4]);
-                    }
-                    if (key == 'movements') {
-                        
-                        dataInput[23] = getCurrencyName(dataInput[4]);
-                    }
-
-                    if (key == 'movementsPayments') {
-                        changeTaxDocuments(dataInput);
-                        if (!(dataInput[2]==''&&dataInput[3]==''&&dataInput[4]=='')) {
-                            context.write({
-                                key: key,
-                                value: {
-                                    arrTransactions: dataInput
-                                }
-                            });
+                    if (dataInput.length==1) {
+                        log.debug("isRecall [map]",dataInput)
+                        context.write({
+                            key: context.key,
+                            value: {
+                                arrTransactions: dataInput
+                            }
+                        });
+                    }else{
+                        getParametersAndFeatures();
+                        var key;
+                        if (dataInput[11] == 'SALDO INICIAL') {
+                            key = 'previousBalance';
+                        } else if (dataInput[11] == 'MOVPAY') {
+                            key = 'movementsPayments';
+                        } else {
+                            key = 'movements';
                         }
                         
-                    } else {
-                        var bankInfo=filterAccounts(dataInput);
-                        //log.debug("bank",bankInfo);
-                        //log.debug("bankcode",bankInfo.bankCode);
-                        if ((bankInfo.bankCode == '' || bankInfo.bankAccount == '') && (bankInfo.type == 'Bank')) {
-                            if (bankInfo.sunatHabil || bankInfo.sunatHabil == 'T') {
-                                if (bankInfo.onceSunat == '10') {
-                                    //log.debug("flag","ingresado 1")
-                                    if (key == 'movements') {
-                                        updatePeriod(dataInput);
+                        if (FEATURES.MULTIBOOK || FEATURES.MULTIBOOK == 'T') {
+                            getVerifiedAccounts();
+                        }
+
+                        dataInput = cleanData(dataInput);
+
+                        if (key == 'previousBalance') {
+
+                            dataInput[4] = getCurrencyName(dataInput[4]);
+                        }
+                        if (key == 'movements') {
+
+                            dataInput[23] = getCurrencyName(dataInput[4]);
+                        }
+
+                        if (key == 'movementsPayments') {
+                            changeTaxDocuments(dataInput);
+                            if (!(dataInput[2] == '' && dataInput[3] == '' && dataInput[4] == '')) {
+                                context.write({
+                                    key: key,
+                                    value: {
+                                        arrTransactions: dataInput
                                     }
-                                    context.write({
-                                        key: key,
-                                        value: {
-                                            arrTransactions: dataInput
+                                });
+                            }
+
+                        } else {
+                            var bankInfo = filterAccounts(dataInput);
+                            //log.debug("bank",bankInfo);
+                            //log.debug("bankcode",bankInfo.bankCode);
+                            if ((bankInfo.bankCode == '' || bankInfo.bankAccount == '') && (bankInfo.type == 'Bank')) {
+                                if (bankInfo.sunatHabil || bankInfo.sunatHabil == 'T') {
+                                    if (bankInfo.onceSunat == '10') {
+                                        //log.debug("flag","ingresado 1")
+                                        if (key == 'movements') {
+                                            updatePeriod(dataInput);
                                         }
-                                    });
-                                }
-                            } else {
-                                if (bankInfo.onceNum == '10') {
-                                    //log.debug("flag","ingresado 2")
-                                    if (key == 'movements') {
-                                        updatePeriod(dataInput);
+                                        context.write({
+                                            key: key,
+                                            value: {
+                                                arrTransactions: dataInput
+                                            }
+                                        });
                                     }
-                                    context.write({
-                                        key: key,
-                                        value: {
-                                            arrTransactions: dataInput
+                                } else {
+                                    if (bankInfo.onceNum == '10') {
+                                        //log.debug("flag","ingresado 2")
+                                        if (key == 'movements') {
+                                            updatePeriod(dataInput);
                                         }
-                                    });
+                                        context.write({
+                                            key: key,
+                                            value: {
+                                                arrTransactions: dataInput
+                                            }
+                                        });
+                                    }
                                 }
                             }
                         }
                     }
+                    
 
 
 
@@ -198,8 +213,14 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
                 // var arrMovements = new Array();
                 // var arrMovementsPayments = new Array();
                 var arrTransactions = new Array();
+                var isRecall;
                 context.output.iterator().each(function (key, value) {
-                    arrTransactions.push(JSON.parse(value).arrTransactions);
+                    if (JSON.parse(value).arrTransactions.length==1) {
+                        isRecall=JSON.parse(value).arrTransactions[0];
+                    }else{
+                        arrTransactions.push(JSON.parse(value).arrTransactions);
+                    }
+                    
                     // var type = key;
                     // if (type == "previousBalance") {
                     //     var jsonSaldoAnterior = JSON.parse(value);
@@ -219,7 +240,8 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
                     // }
                     return true;
                 });
-                log.error("arrTransactions",arrTransactions.length)
+                log.error("arrTransactions [summarize]",arrTransactions.length)
+                log.debug("isRcall [summarize]",isRecall);
                 // log.debug("arrPreviousBalance",arrPreviousBalance.length);
                 // log.debug("arrMovements",arrMovements.length);
                 // log.debug("arrMovementsPayments",arrMovementsPayments.length);
@@ -245,25 +267,29 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
                 
                 
                 if (arrTransactions.length != 0) {
-                    var file_size = 7340032
-                    var newTransactions = new Array();
+                    // var file_size = 7340032
+                    // var newTransactions = new Array();
                     var stringTemporal
                     var cont = 1;
-                    arrTransactions.forEach(function (transaction) {
-                        newTransactions.push(transaction);
-                        stringTemporal = JSON.stringify(newTransactions);
-                        var string_size_in_bytes = lengthInUtf8Bytes(stringTemporal);
-                        if (string_size_in_bytes >= file_size) {
-                            saveAuxiliarFile(stringTemporal, cont);
-                            newTransactions = new Array();
-                            cont++;
-                        }
-                    })
-                    if (newTransactions.length != 0) {
+                    stringTemporal = JSON.stringify(arrTransactions);
+                    // arrTransactions.forEach(function (transaction) {
+                    //     newTransactions.push(transaction);
+                    //     stringTemporal = JSON.stringify(newTransactions);
+                    //     var string_size_in_bytes = lengthInUtf8Bytes(stringTemporal);
+                    //     if (string_size_in_bytes >= file_size) {
+                    //         saveAuxiliarFile(stringTemporal, cont);
+                    //         newTransactions = new Array();
+                    //         cont++;
+                    //     }
+                    // })
+                    if (isRecall) {
                         saveAuxiliarFile(stringTemporal, cont);
+                        recallMapReduce();
+                    }else{
+                        saveAuxiliarFile(stringTemporal, cont);
+                        callSchedule();
                     }
-                   
-                    callSchedule();
+                                                         
                 } else {
                     //NoData();
                     log.debug("No data","no data");
@@ -282,7 +308,7 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
             // Parametros
 
             //paramperiodo
-            PARAMETERS.PERIOD = '128';
+            PARAMETERS.PERIOD = '130';
 
             //paramClosedPeriod
             PARAMETERS.CLOSED_PERIOD ='F';
@@ -299,7 +325,19 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
             //paramIndicadorOp
             PARAMETERS.OPERATIONS_INDICATOR ='1';
 
+            PARAMETERS.FILES = objContext.getParameter({
+                name: 'custscript_smc_pe_caj_banc_efec_file_mp'
+            });
+            PARAMETERS.LIMIT = objContext.getParameter({
+                name: 'custscript_smc_pe_caj_banc_efec_lmit_mp'
+            });
 
+            if (PARAMETERS.FILES==''||PARAMETERS.FILES==' '||PARAMETERS.FILES==null) {
+                PARAMETERS.FILES = new Array();
+            }
+            if (PARAMETERS.LIMIT==''||PARAMETERS.LIMIT==' '||PARAMETERS.LIMIT==null) {
+                PARAMETERS.LIMIT = 0;
+            }
 
             //featuresubs 
             FEATURES.SUBSID = runtime.isFeatureInEffect({
@@ -388,6 +426,22 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
 
         }
 
+        function recallControl(){
+            //Controla la cantidad de transacciones a procesar, si excede al valor de "range" realiza un rellamado
+            var newLimit = PARAMETERS.LIMIT + range;
+            var lengthTransactions;
+            var isRecall=false;
+            lengthTransactions=arrTransactions.length;
+            if (newLimit >= lengthTransactions) {
+                arrTransactions = arrTransactions.slice(PARAMETERS.LIMIT, lengthTransactions);
+            }else{
+                arrTransactions = arrTransactions.slice(PARAMETERS.LIMIT, newLimit);
+                isRecall=true;
+            }
+            
+
+            arrTransactions.push([isRecall])
+        }
         function updatePeriod(transactions){
             if (transactions[21] != null && transactions[21] != '' && transactions[21] != ' ') {
                 transactions[21] = getPeriodUpdate(transactions[21]);
@@ -3736,6 +3790,18 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
 
         }
 
+        function recallMapReduce(){
+            var params = {};
+            params['custscript_smc_pe_caj_banc_efec_file_mp']=PARAMETERS.FILES;
+            params['custscript_smc_pe_caj_banc_efec_lmit_mp']=PARAMETERS.LIMIT+range;
+            var RedirecMprd = task.create({
+                taskType: task.TaskType.MAP_REDUCE,
+                scriptId: 'customscript_smc_pe_cajabanco_efec_mprd',
+                deploymentId: 'customdeploy_smc_pe_cajabanco_efec_mprd',
+                params: params
+            });
+            RedirecMprd.submit();
+        }
         function saveAuxiliarFile(strAuxiliar, cont) {
             var folderId = objContext.getParameter({
                 name: 'custscript_lmry_pe_2016_rg_file_cabinet'
@@ -3759,10 +3825,7 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
                 });
 
                 var idFile = transactionsFile.save(); // Termina de grabar el archivo
-
-                if (PARAMETERS.FILES == null) {
-                    PARAMETERS.FILES = new Array();
-                }
+       
                 PARAMETERS.FILES.push(idFile);
 
             } else {
