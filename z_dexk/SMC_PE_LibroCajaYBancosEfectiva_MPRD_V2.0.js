@@ -49,7 +49,7 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
         var specialName;//*
         var arrAccountingContextVerif = new Array();
         var arrTransactions = new Array();
-        var range = 500;
+        var range = 30000;
         var arrAccounts = new Array();
         function getInputData() {
             try {
@@ -117,7 +117,7 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
                         FEATURES.SUBSID = runtime.isFeatureInEffect({
                             feature: "SUBSIDIARIES"
                         });
-                        PARAMETERS.SUBSID = '6';
+                        PARAMETERS.SUBSID = '2';
                         var key;
                         if (dataInput[11] == 'SALDO INICIAL') {
                             key = 'previousBalance';
@@ -319,14 +319,14 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
             // Parametros
 
             //paramperiodo
-            PARAMETERS.PERIOD = '578';
+            PARAMETERS.PERIOD = '128';
 
             //paramClosedPeriod
             PARAMETERS.CLOSED_PERIOD ='F';
             //paramsubsidi
-            PARAMETERS.SUBSID = '6';
+            PARAMETERS.SUBSID = '2';
             //paramMultibook
-            PARAMETERS.MULTIBOOK = '1';
+            PARAMETERS.MULTIBOOK = ' ';
             //paramrecoid
             PARAMETERS.RECORDID = '';
 
@@ -334,7 +334,7 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
             PARAMETERS.TYPE_EXT_PERIOD = '1';
 
             //paramIndicadorOp
-            PARAMETERS.OPERATIONS_INDICATOR ='0';
+            PARAMETERS.OPERATIONS_INDICATOR ='1';
 
             PARAMETERS.FILES = objContext.getParameter({
                 name: 'custscript_smc_pe_caj_banc_efec_file_mp'

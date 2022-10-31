@@ -85,6 +85,7 @@ define(["N/record", "N/runtime", "N/file", "N/search",
             var INFO = objContext.getParameter({
                 name: 'custscript_smc_pe_param_globales'
             });
+            
             INFO = JSON.parse(INFO);
             log.debug("Share data", INFO)
             PARAMETERS = INFO.parameters;
@@ -131,7 +132,9 @@ define(["N/record", "N/runtime", "N/file", "N/search",
             log.debug("arrMovements", arrMovements.length);
             log.debug("arrMovementsPayments", arrMovementsPayments.length);
             log.debug("console", "Agrupando saldo inicial...");
-            getVerifiedAccounts();          
+            if (FEATURES.MULTIBOOK || FEATURES.MULTIBOOK == 'T') {
+                getVerifiedAccounts();
+            }          
             if (arrAccountingContextVerif.length != 0) {
                 arrPreviousBalance = joinRepeat(arrPreviousBalance);
             }
@@ -141,19 +144,26 @@ define(["N/record", "N/runtime", "N/file", "N/search",
                 log.debug("payment",arrMovementsPayments[i])
                 
             }
-            if (arrMovementsPayments.length!=0) {
-                arrMovementsPayments.sort(function (a, b) {
-                    return a[4] - b[4];
-                });
-            }          
+            // if (arrMovementsPayments.length!=0) {
+            //     arrMovementsPayments.sort(function (a, b) {
+            //         return a[4] - b[4];
+            //     });
+            // }          
             log.debug("console", "pago de movimientos ordenados.");
             log.debug("console", "Agrupando movimientos...");
             arrMovements = joinMovements(arrMovements, arrMovementsPayments);
             log.debug("console", "Movimientos Agrupados.");
-            
+            arrMovements.sort(function (a, b) {
+                return a[7] - b[7];
+            });
+            arrMovements.sort(function (a, b) {
+                return a[15] - b[15];
+            });
+            log.debug("arrMovements [despues]", arrMovements.length);
             log.debug("console", "Agrupando Total de transacciones...");
             arrTransactions = joinTransactions(arrPreviousBalance, arrMovements);
             log.debug("console", "Total de transacciones agrupadas");
+            log.debug("arrTransactions [result]", arrTransactions.length);
         }
         function generatedFile(ArrTemp) {
             var strReturn = '';
