@@ -59,8 +59,9 @@ define(["N/record", "N/runtime", "N/file", "N/search",
             try {
                 getParametersAndFeatures();
                 getTransactions();
-                processTransaction();
+                
                 if (arrTransactions.length != 0) {
+                    processTransaction();
                     strTransactions = generatedFile(arrTransactions);
 
                     if (fileNumber != 0) {

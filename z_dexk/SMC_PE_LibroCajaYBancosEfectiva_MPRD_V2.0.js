@@ -49,7 +49,7 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
         var specialName;//*
         var arrAccountingContextVerif = new Array();
         var arrTransactions = new Array();
-        var range = 30000;
+        var range = 75000;
         var arrAccounts = new Array();
         function getInputData() {
             try {
@@ -75,6 +75,7 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
 
                 recallControl();
                 log.debug("arrTransactions [parse]",arrTransactions.length)
+                //log.debug("arrTransactions ",arrTransactions)
                 return arrTransactions;
                 //return [];
             } catch (err) {
@@ -105,7 +106,7 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
                     if (dataInput.length==1) {
                         log.debug("isRecall [map]",dataInput)
                         context.write({
-                            key: context.key,
+                            key: 'recall',
                             value: {
                                 arrTransactions: dataInput
                             }
@@ -224,8 +225,10 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
                 var arrTransactions = new Array();
                 var isRecall;
                 context.output.iterator().each(function (key, value) {
+                    //log.debug("JSON.parse(value).arrTransactions",JSON.parse(value))
                     if (JSON.parse(value).arrTransactions.length==1) {
                         isRecall=JSON.parse(value).arrTransactions[0];
+                        log.debug("flag [summarize]",JSON.parse(value).arrTransactions)
                     }else{
                         arrTransactions.push(JSON.parse(value).arrTransactions);
                     }
@@ -291,19 +294,15 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
                     //         cont++;
                     //     }
                     // })
-                    if (isRecall) {
-                        log.debug("console","rellamado")
-                        saveAuxiliarFile(stringTemporal, isRecall);
-                        recallMapReduce();
-                    }else{
-                        log.debug("console","Pintar")
-                        saveAuxiliarFile(stringTemporal, isRecall);
-                        callSchedule();
-                    }
-                                                         
-                } else {
-                    //NoData();
-                    log.debug("No data","no data");
+                    
+                    saveAuxiliarFile(stringTemporal);                               
+                } 
+                if (isRecall=='T') {
+                    log.debug("console","rellamado")                    
+                    recallMapReduce();
+                }else{
+                    log.debug("console","Pintar")                   
+                    callSchedule();
                 }
                 
             } catch (err) {
@@ -443,17 +442,22 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
 
         function recallControl(){
             //Controla la cantidad de transacciones a procesar, si excede al valor de "range" realiza un rellamado
-            var newLimit = PARAMETERS.LIMIT + range;
             var lengthTransactions=arrTransactions.length;
-            var isRecall=false;
-            log.debug("newLimit",newLimit)
-            
-            if (newLimit >= lengthTransactions) {
-                arrTransactions = arrTransactions.slice(PARAMETERS.LIMIT, lengthTransactions);
-            }else{
-                arrTransactions = arrTransactions.slice(PARAMETERS.LIMIT, newLimit);
-                isRecall=true;
+            var isRecall = 'F';
+            if (lengthTransactions!=0) {
+                var newLimit = PARAMETERS.LIMIT + range;
+
+                
+                log.debug("newLimit", newLimit)
+
+                if (newLimit >= lengthTransactions) {
+                    arrTransactions = arrTransactions.slice(PARAMETERS.LIMIT, lengthTransactions);
+                } else {
+                    arrTransactions = arrTransactions.slice(PARAMETERS.LIMIT, newLimit);
+                    isRecall = 'T';
+                }
             }
+            
             
 
             arrTransactions.push([isRecall])
@@ -3818,7 +3822,7 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
             });
             RedirecMprd.submit();
         }
-        function saveAuxiliarFile(strAuxiliar, isRecall) {
+        function saveAuxiliarFile(strAuxiliar) {
             var folderId = objContext.getParameter({
                 name: 'custscript_lmry_pe_2016_rg_file_cabinet'
             });
