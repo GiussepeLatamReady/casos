@@ -56,7 +56,7 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
                 
                 getParametersAndFeatures();
                 getSubisidiaryData();
-                log.debug('Parametros:', PARAMETERS);
+                log.debug('Parametros [getInputData]:', PARAMETERS);
 
                 getAccounts();
                 //Saldo Anterior
@@ -74,7 +74,7 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
                 log.debug("arrTransactions",arrTransactions.length)
 
                 recallControl();
-                
+                log.debug("arrTransactions [parse]",arrTransactions.length)
                 return arrTransactions;
                 //return [];
             } catch (err) {
@@ -111,7 +111,13 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
                             }
                         });
                     }else{
-                        getParametersAndFeatures();
+                        FEATURES.MULTIBOOK = runtime.isFeatureInEffect({
+                            feature: "MULTIBOOK"
+                        });
+                        FEATURES.SUBSID = runtime.isFeatureInEffect({
+                            feature: "SUBSIDIARIES"
+                        });
+                        PARAMETERS.SUBSID = '6';
                         var key;
                         if (dataInput[11] == 'SALDO INICIAL') {
                             key = 'previousBalance';
@@ -206,8 +212,11 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
             try {
                 
                 getParametersAndFeatures();
+                log.debug('Parametros [summarize]:', PARAMETERS);
                 getSubisidiaryData();
-                getVerifiedAccounts();
+                if (FEATURES.MULTIBOOK || FEATURES.MULTIBOOK == 'T') {
+                    getVerifiedAccounts();
+                }
 
                 // var arrPreviousBalance = new Array();
                 // var arrMovements = new Array();
@@ -283,10 +292,12 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
                     //     }
                     // })
                     if (isRecall) {
-                        saveAuxiliarFile(stringTemporal, cont);
+                        log.debug("console","rellamado")
+                        saveAuxiliarFile(stringTemporal, isRecall);
                         recallMapReduce();
                     }else{
-                        saveAuxiliarFile(stringTemporal, cont);
+                        log.debug("console","Pintar")
+                        saveAuxiliarFile(stringTemporal, isRecall);
                         callSchedule();
                     }
                                                          
@@ -308,14 +319,14 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
             // Parametros
 
             //paramperiodo
-            PARAMETERS.PERIOD = '130';
+            PARAMETERS.PERIOD = '578';
 
             //paramClosedPeriod
             PARAMETERS.CLOSED_PERIOD ='F';
             //paramsubsidi
-            PARAMETERS.SUBSID = '2';
+            PARAMETERS.SUBSID = '6';
             //paramMultibook
-            PARAMETERS.MULTIBOOK = ' ';
+            PARAMETERS.MULTIBOOK = '1';
             //paramrecoid
             PARAMETERS.RECORDID = '';
 
@@ -323,7 +334,7 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
             PARAMETERS.TYPE_EXT_PERIOD = '1';
 
             //paramIndicadorOp
-            PARAMETERS.OPERATIONS_INDICATOR ='1';
+            PARAMETERS.OPERATIONS_INDICATOR ='0';
 
             PARAMETERS.FILES = objContext.getParameter({
                 name: 'custscript_smc_pe_caj_banc_efec_file_mp'
@@ -331,12 +342,16 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
             PARAMETERS.LIMIT = objContext.getParameter({
                 name: 'custscript_smc_pe_caj_banc_efec_lmit_mp'
             });
-
+            log.debug("PARAMETERS.FILES [NEW]",PARAMETERS.FILES)
             if (PARAMETERS.FILES==''||PARAMETERS.FILES==' '||PARAMETERS.FILES==null) {
                 PARAMETERS.FILES = new Array();
+            }else{
+                PARAMETERS.FILES =JSON.parse(PARAMETERS.FILES);
             }
             if (PARAMETERS.LIMIT==''||PARAMETERS.LIMIT==' '||PARAMETERS.LIMIT==null) {
                 PARAMETERS.LIMIT = 0;
+            }else{
+                PARAMETERS.LIMIT = parseInt(PARAMETERS.LIMIT);
             }
 
             //featuresubs 
@@ -429,9 +444,10 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
         function recallControl(){
             //Controla la cantidad de transacciones a procesar, si excede al valor de "range" realiza un rellamado
             var newLimit = PARAMETERS.LIMIT + range;
-            var lengthTransactions;
+            var lengthTransactions=arrTransactions.length;
             var isRecall=false;
-            lengthTransactions=arrTransactions.length;
+            log.debug("newLimit",newLimit)
+            
             if (newLimit >= lengthTransactions) {
                 arrTransactions = arrTransactions.slice(PARAMETERS.LIMIT, lengthTransactions);
             }else{
@@ -549,9 +565,7 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
                 }
                 fechaString = '00/' + auxmess + '/' + auxanio;
 
-            } else {
-                fechaString = formatDate(period)
-            }
+            } 
             return fechaString;
         }
 
@@ -3792,8 +3806,10 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
 
         function recallMapReduce(){
             var params = {};
+            log.debug("PARAMETERS.FILES [recallMapReduce]",PARAMETERS.FILES)
             params['custscript_smc_pe_caj_banc_efec_file_mp']=PARAMETERS.FILES;
             params['custscript_smc_pe_caj_banc_efec_lmit_mp']=PARAMETERS.LIMIT+range;
+            log.debug("params",params)
             var RedirecMprd = task.create({
                 taskType: task.TaskType.MAP_REDUCE,
                 scriptId: 'customscript_smc_pe_cajabanco_efec_mprd',
@@ -3802,7 +3818,7 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
             });
             RedirecMprd.submit();
         }
-        function saveAuxiliarFile(strAuxiliar, cont) {
+        function saveAuxiliarFile(strAuxiliar, isRecall) {
             var folderId = objContext.getParameter({
                 name: 'custscript_lmry_pe_2016_rg_file_cabinet'
             });
@@ -3812,9 +3828,9 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
 
                 // Extension del archivo
                 var seed = new Date().getTime();
-                var fileName = 'Temp' + '_' + 'CajaYBancosEfectiva' + '_' + seed + +'_' + cont + '_' + '.txt';
+                var fileName = 'Temp' + '_' + 'CajaYBancosEfectiva' + '_' + seed  +'_' + '.txt';
 
-                log.debug("Name File :",fileName);
+                
                 // Crea el archivo
                 var transactionsFile = file.create({
                     name: fileName,
@@ -3825,8 +3841,22 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
                 });
 
                 var idFile = transactionsFile.save(); // Termina de grabar el archivo
-       
+                log.debug("Name File - idFile:",fileName+" - "+idFile);
+                log.debug("PARAMETERS.FILES [save Antes]",PARAMETERS.FILES)
+                // if (isRecall) {
+                //     if (PARAMETERS.FILES=='') {
+                //         log.debug("console","files vacio")
+                //         PARAMETERS.FILES=""+idFile;
+                //     }else{
+                //         log.debug("console","file lleno")
+                //         PARAMETERS.FILES+=","+idFile;
+                //     }                   
+                // }else{
+                //     PARAMETERS.FILES=PARAMETERS.FILES.split(",");
+                //     PARAMETERS.FILES.push(idFile);
+                // }
                 PARAMETERS.FILES.push(idFile);
+                log.debug("PARAMETERS.FILES [save despues]",PARAMETERS.FILES)
 
             } else {
                 log.debug("WARNING MESSAGE", "No se encontró el folder del reporte.")

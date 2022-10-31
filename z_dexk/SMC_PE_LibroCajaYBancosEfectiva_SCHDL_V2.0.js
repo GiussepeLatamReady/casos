@@ -104,20 +104,15 @@ define(["N/record", "N/runtime", "N/file", "N/search",
         function getTransactions() {
             var arrfiles = PARAMETERS.FILES;
             for (var i = 0; i < arrfiles.length; i++) {
-
-                if (i == 0) {
-                    var files = fileModulo.load({
-                        id: arrfiles[i]
-                    }).getContents();
-                } else {
-                    var aux = fileModulo.load({
-                        id: arrfiles[i]
-                    }).getContents();
-                    files.push(aux);
-                }
+                var files = fileModulo.load({
+                    id: arrfiles[i]
+                }).getContents();
+                var arrAux = JSON.parse(files);
+                arrTransactions = arrTransactions.concat(arrAux);
+                
             }
 
-            arrTransactions = JSON.parse(files);
+            //arrTransactions = JSON.parse(files);
             log.error("arrTransactions",arrTransactions.length)
 
             arrTransactions.forEach(function(transaction){
@@ -142,6 +137,10 @@ define(["N/record", "N/runtime", "N/file", "N/search",
             }
             log.debug("console", "agrupacion terminada");
             log.debug("console", "Ordenando pago de movimientos...");
+            for (var i = 0; i < 5; i++) {
+                log.debug("payment",arrMovementsPayments[i])
+                
+            }
             if (arrMovementsPayments.length!=0) {
                 arrMovementsPayments.sort(function (a, b) {
                     return a[4] - b[4];

@@ -20,3 +20,20 @@ function recallControl(arrTransactions){
   }
   
 }
+
+/*PARAMETERS.PERIOD = '130';
+
+            //paramClosedPeriod
+            PARAMETERS.CLOSED_PERIOD ='F';
+            //paramsubsidi
+            PARAMETERS.SUBSID = '2';
+            //paramMultibook
+            PARAMETERS.MULTIBOOK = ' ';
+            //paramrecoid
+            PARAMETERS.RECORDID = '';
+
+            //paramTipoExtPeriodo
+            PARAMETERS.TYPE_EXT_PERIOD = '1';
+
+            //paramIndicadorOp
+            PARAMETERS.OPERATIONS_INDICATOR ='1'; */
