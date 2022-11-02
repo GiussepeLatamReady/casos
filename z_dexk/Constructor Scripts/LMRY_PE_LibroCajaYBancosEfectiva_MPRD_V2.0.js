@@ -70,12 +70,6 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
                 arrTransactions = arrTransactions.concat(arrPreviousBalance, arrMovements, arrMovementsPayments,arrMovementsPayExpRep);
                 
                 
-                log.debug("arrPreviousBalance",arrPreviousBalance.length)
-                log.debug("arrMovements",arrMovements.length)
-                log.debug("arrMovementsPayments",arrMovementsPayments.length)
-                log.debug("arrMovementsPayExpRep",arrMovementsPayExpRep.length)
-                log.debug("arrTransactions",arrTransactions.length)
-
                 return arrTransactions;
                 //return [];
             } catch (err) {
@@ -197,7 +191,7 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
             try {
                 
                 getParametersAndFeatures();
-                log.debug('Parametros [summarize]:', PARAMETERS);
+                
                 getSubisidiaryData();
                 if (FEATURES.MULTIBOOK || FEATURES.MULTIBOOK == 'T') {
                     getVerifiedAccounts();
@@ -210,8 +204,7 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
                                     
                     return true;
                 });
-                log.error("arrTransactions [summarize]",arrTransactions.length)
-                //log.debug("isRcall [summarize]",isRecall);
+                
                          
                 if (arrTransactions.length != 0) {
                     var lengthTransactions = arrTransactions.length;
@@ -220,7 +213,7 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
                     while (isRepeat) {
                         
                         var newLimit = base + range;
-                        log.debug("newLimit-base",base+" - "+newLimit)
+                        
                         if (newLimit >= lengthTransactions) {
                             var newArrTransactions = arrTransactions.slice(base, lengthTransactions);
                             isRepeat = false;
@@ -235,7 +228,7 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
                     }                                                
                 } 
                
-                log.debug("console","Pintar")                   
+                                 
                 callSchedule();
                 
             } catch (err) {

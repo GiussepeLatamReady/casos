@@ -71,7 +71,7 @@ define(["N/record", "N/runtime", "N/file", "N/search",
                     SaveFile();
                 } else {
                     NoData();
-                    log.debug("Nodata","Nodata");
+                    
                 }
             } catch (error) {
 
@@ -133,34 +133,25 @@ define(["N/record", "N/runtime", "N/file", "N/search",
 
         }
         function processTransaction(){
-            log.debug("arrPreviousBalance", arrPreviousBalance.length);
-            log.debug("arrMovements", arrMovements.length);
-            //log.debug("arrMovementsPayments", arrMovementsPayments.length);
-            log.debug("console", "Agrupando saldo inicial...");
+           
             if (FEATURES.MULTIBOOK || FEATURES.MULTIBOOK == 'T') {
                 getVerifiedAccounts();
             }          
             if (arrAccountingContextVerif.length != 0) {
                 arrPreviousBalance = joinRepeat(arrPreviousBalance);
             }
-            log.debug("console", "agrupacion terminada");
-            log.debug("console", "Ordenando pago de movimientos...");
-                    
-            log.debug("console", "pago de movimientos ordenados.");
-            log.debug("console", "Agrupando movimientos...");
+            
             arrMovements = joinMovements(arrMovements, jsonMovementsPay);
-            log.debug("console", "Movimientos Agrupados.");
+            
             arrMovements.sort(function (a, b) {
                 return a[7] - b[7];
             });
             arrMovements.sort(function (a, b) {
                 return a[15] - b[15];
             });
-            log.debug("arrMovements [despues]", arrMovements.length);
-            log.debug("console", "Agrupando Total de transacciones...");
+            
             arrTransactions = joinTransactions(arrPreviousBalance, arrMovements);
-            log.debug("console", "Total de transacciones agrupadas");
-            log.debug("arrTransactions [result]", arrTransactions.length);
+            
         }
         function generatedFile(ArrTemp) {
             var strReturn = '';
