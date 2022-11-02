@@ -34,19 +34,41 @@
   }
 }
 
-PARAMETERS.PERIOD = '130';
+{
+  parameters: {
+     PERIOD: "128",
+     CLOSED_PERIOD: "F",
+     SUBSID: "2",
+     MULTIBOOK: " ",
+     RECORDID: "",
+     TYPE_EXT_PERIOD: "1",
+     OPERATIONS_INDICATOR: "1",
+     FILES: [
+        42039
+     ],
+     LIMIT: 0
+  },
+  features: {
+     SUBSID: true,
+     MULTIBOOK: false,
+     CLASS: true,
+     DEPARTMENT: true
+  },
+  company: {
+     NAME: "Vesalio S.A.",
+     RUC: "20100178401"
+  },
+  dataAditional: {
+     periodEndDate: "31/07/2022",
+     periodStartDate: "01/07/2022",
+     periodName: "Jul 2022",
+     "arrPeriodSpecial": [],
+     dateEspecial: {
+        year: "ANHO",
+        month: "MES",
+        day: "DIA"
+     }
+  }
+}
 
-            //paramClosedPeriod
-            PARAMETERS.CLOSED_PERIOD ='F';
-            //paramsubsidi
-            PARAMETERS.SUBSID = '2';
-            //paramMultibook
-            PARAMETERS.MULTIBOOK = ' ';
-            //paramrecoid
-            PARAMETERS.RECORDID = '';
 
-            //paramTipoExtPeriodo
-            PARAMETERS.TYPE_EXT_PERIOD = '1';
-
-            //paramIndicadorOp
-            PARAMETERS.OPERATIONS_INDICATOR ='1';

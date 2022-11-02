@@ -3,8 +3,8 @@
 ||                                                              ||
 ||  File Name: LMRY_PE_LibroCajaYBancosEfectiva_SCHDL_V2.0.js   ||
 ||                                                              ||
-||  Version Date         Author        Remarks                  ||
-||  2.0    NOVIEMBRE 14 2018  LatamReady    Use Script 2.0      ||
+||  Version    Date         Author              Remarks         ||
+||  2.0    Octubre 31 2022  Giussepe Delgado    Use Script 2.0  ||
  \= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 /**
  * @NApiVersion 2.x
@@ -12,11 +12,11 @@
  * @NModuleScope Public
  */
 define(["N/record", "N/runtime", "N/file", "N/search",
-    "N/format", "N/log", "N/config"
+    "N/format", "N/log", "N/config", "./PE_Library_Mensual/LMRY_PE_Reportes_LBRY_V2.0.js"
 ],
 
     function (recordModulo, runtime, fileModulo, search, format, log,
-        config) {
+        config, libreria) {
 
         var objContext = runtime.getCurrentScript();
         // Nombre del Reporte
@@ -42,7 +42,7 @@ define(["N/record", "N/runtime", "N/file", "N/search",
         var arrTransactions = new Array();
         var arrPreviousBalance = new Array();
         var arrMovements = new Array();
-        var arrMovementsPayments = new Array();
+        var jsonMovementsPay ={};
         var arrAccountingContextVerif = new Array();
         var file_size = 7340032;
         var fileNumber = 0;
@@ -54,7 +54,7 @@ define(["N/record", "N/runtime", "N/file", "N/search",
         
         var idTemporal='';
         var contNcorreltivo=1;
-        var jsonMovementsPay ={};
+        
         function execute(context) {
             try {
                 getParametersAndFeatures();
@@ -70,13 +70,13 @@ define(["N/record", "N/runtime", "N/file", "N/search",
 
                     SaveFile();
                 } else {
-                    //NoData();
+                    NoData();
                     log.debug("Nodata","Nodata");
                 }
             } catch (error) {
 
-                //libreria.sendMail(LMRY_SCRIPT, ' [ execute] ' + error);
-                //updateLogGenerator('error');
+                libreria.sendMail(LMRY_SCRIPT, ' [ execute] ' + error);
+                updateLogGenerator('error');
                 log.error("[ execute]", error);
             }
 
@@ -84,45 +84,9 @@ define(["N/record", "N/runtime", "N/file", "N/search",
 
         function getParametersAndFeatures() {
             var INFO = objContext.getParameter({
-                name: 'custscript_smc_pe_param_globales'
+                name: 'custscript_lmry_pe_param_globales'
             });
-            // var INFO = {
-            //     parameters: {
-            //        PERIOD: "128",
-            //        CLOSED_PERIOD: "F",
-            //        SUBSID: "2",
-            //        MULTIBOOK: " ",
-            //        RECORDID: "",
-            //        TYPE_EXT_PERIOD: "1",
-            //        OPERATIONS_INDICATOR: "1",
-            //        FILES: [
-            //           42039
-            //        ],
-            //        LIMIT: 0
-            //     },
-            //     features: {
-            //        SUBSID: true,
-            //        MULTIBOOK: false,
-            //        CLASS: true,
-            //        DEPARTMENT: true
-            //     },
-            //     company: {
-            //        NAME: "Vesalio S.A.",
-            //        RUC: "20100178401"
-            //     },
-            //     dataAditional: {
-            //        periodEndDate: "31/07/2022",
-            //        periodStartDate: "01/07/2022",
-            //        periodName: "Jul 2022",
-            //        "arrPeriodSpecial": [],
-            //        dateEspecial: {
-            //           year: "ANHO",
-            //           month: "MES",
-            //           day: "DIA"
-            //        }
-            //     }
-            //   }
-            
+                    
             INFO = JSON.parse(INFO);
             log.debug("Share data", INFO)
             PARAMETERS = INFO.parameters;
@@ -181,15 +145,7 @@ define(["N/record", "N/runtime", "N/file", "N/search",
             }
             log.debug("console", "agrupacion terminada");
             log.debug("console", "Ordenando pago de movimientos...");
-            // for (var i = 0; i < 5; i++) {
-            //     log.debug("payment",arrMovementsPayments[i])
-                
-            // }
-            // if (arrMovementsPayments.length!=0) {
-            //     arrMovementsPayments.sort(function (a, b) {
-            //         return a[4] - b[4];
-            //     });
-            // }          
+                    
             log.debug("console", "pago de movimientos ordenados.");
             log.debug("console", "Agrupando movimientos...");
             arrMovements = joinMovements(arrMovements, jsonMovementsPay);
@@ -550,33 +506,6 @@ define(["N/record", "N/runtime", "N/file", "N/search",
             return strReturn;
         }
 
-        function getPeriodUpdate(update) {
-
-            var columna0 = '';
-            var docSearch = search.create({
-                type: 'customrecord_lmry_cl_period_fact_actual',
-                filters: [
-                    ["internalidnumber", "equalto", update]
-                ],
-                columns: [{
-                    name: 'custrecord_lmry_cl_period_fact_actual'
-                }]
-
-            });
-            var pageData = docSearch.runPaged({
-                pageSize: 1000
-            });
-            pageData.pageRanges.forEach(function (pageRange) {
-                page = pageData.fetch({
-                    index: pageRange.index
-                });
-                page.data.forEach(function (result) {
-                    var columns = result.columns;
-                    columna0 = result.getText(columns[0]);
-                });
-            });
-            return columna0;
-        }
 
         function formatDate(date) {
             var parsedDateStringAsRawDateObject = format.parse({
@@ -904,7 +833,6 @@ define(["N/record", "N/runtime", "N/file", "N/search",
         }
         
         function joinMovements(arrMovements, jsonMovementsPay) {
-            var arrTemp = new Array();
             var arrReturn = new Array();
             var jsonTemp = {};
             var isEmptyObject = JSON.stringify(jsonMovementsPay) === '{}';
@@ -1612,7 +1540,7 @@ define(["N/record", "N/runtime", "N/file", "N/search",
                 var NameFile;
 
                 fileext = '.txt';
-                NameFile = Name_File()+'_test'+ fileext;
+                NameFile = Name_File()+fileext;
                 // Crea el archivo
                 var file = fileModulo.create({
                     name: NameFile,
@@ -1642,75 +1570,75 @@ define(["N/record", "N/runtime", "N/file", "N/search",
                 log.debug("urlfile",urlfile)
                 log.debug("NameFile",NameFile)
                 //Genera registro personalizado como log
-                // if (idfile) {
-                //     var usuarioTemp = runtime.getCurrentUser();
-                //     var usuario = usuarioTemp.name;
+                if (idfile) {
+                    var usuarioTemp = runtime.getCurrentUser();
+                    var usuario = usuarioTemp.name;
 
-                //     if (arrPeriodSpecial.length > 0) {
-                //         periodName = specialName;
-                //     }
+                    if (arrPeriodSpecial.length > 0) {
+                        periodName = specialName;
+                    }
 
-                //     if (PARAMETERS.RECORDID != null) {
-                //         var record = recordModulo.load({
-                //             type: 'customrecord_lmry_pe_2016_rpt_genera_log',
-                //             id: PARAMETERS.RECORDID
-                //         });
-                //     } else {
-                //         var record = recordModulo.create({
-                //             type: 'customrecord_lmry_pe_2016_rpt_genera_log'
-                //         });
-                //     }
+                    if (PARAMETERS.RECORDID != null) {
+                        var record = recordModulo.load({
+                            type: 'customrecord_lmry_pe_2016_rpt_genera_log',
+                            id: PARAMETERS.RECORDID
+                        });
+                    } else {
+                        var record = recordModulo.create({
+                            type: 'customrecord_lmry_pe_2016_rpt_genera_log'
+                        });
+                    }
 
-                //     //Nombre de Archivo
-                //     record.setValue({
-                //         fieldId: 'custrecord_lmry_pe_2016_rg_name',
-                //         value: NameFile
-                //     });
+                    //Nombre de Archivo
+                    record.setValue({
+                        fieldId: 'custrecord_lmry_pe_2016_rg_name',
+                        value: NameFile
+                    });
 
-                //     //Url de Archivo
-                //     record.setValue({
-                //         fieldId: 'custrecord_lmry_pe_2016_rg_url_file',
-                //         value: urlfile
-                //     });
+                    //Url de Archivo
+                    record.setValue({
+                        fieldId: 'custrecord_lmry_pe_2016_rg_url_file',
+                        value: urlfile
+                    });
 
-                //     //Nombre de Reporte
-                //     record.setValue({
-                //         fieldId: 'custrecord_lmry_pe_2016_rg_transaction',
-                //         value: NAME_REPORT
-                //     });
+                    //Nombre de Reporte
+                    record.setValue({
+                        fieldId: 'custrecord_lmry_pe_2016_rg_transaction',
+                        value: NAME_REPORT
+                    });
 
-                //     //Nombre de Subsidiaria
-                //     record.setValue({
-                //         fieldId: 'custrecord_lmry_pe_2016_rg_subsidiary',
-                //         value: COMPANY.NAME
-                //     });
+                    //Nombre de Subsidiaria
+                    record.setValue({
+                        fieldId: 'custrecord_lmry_pe_2016_rg_subsidiary',
+                        value: COMPANY.NAME
+                    });
 
-                //     //Periodo
-                //     record.setValue({
-                //         fieldId: 'custrecord_lmry_pe_2016_rg_postingperiod',
-                //         value: periodName
-                //     });
+                    //Periodo
+                    record.setValue({
+                        fieldId: 'custrecord_lmry_pe_2016_rg_postingperiod',
+                        value: periodName
+                    });
 
-                //     //Multibook
-                //     if (FEATURES.MULTIBOOK || FEATURES.MULTIBOOK == 'T') {
-                //         record.setValue({
-                //             fieldId: 'custrecord_lmry_pe_rg_multibook',
-                //             value: multibookName
-                //         });
-                //     }
+                    //Multibook
+                    if (FEATURES.MULTIBOOK || FEATURES.MULTIBOOK == 'T') {
+                        record.setValue({
+                            fieldId: 'custrecord_lmry_pe_rg_multibook',
+                            value: multibookName
+                        });
+                    }
 
-                //     //Creado Por
-                //     record.setValue({
-                //         fieldId: 'custrecord_lmry_pe_2016_rg_employee',
-                //         value: usuario
-                //     });
+                    //Creado Por
+                    record.setValue({
+                        fieldId: 'custrecord_lmry_pe_2016_rg_employee',
+                        value: usuario
+                    });
 
-                //     var recordId = record.save();
+                    var recordId = record.save();
 
 
-                //     // Envia mail de conformidad al usuario
-                //     libreria.sendrptuser(NAME_REPORT, 3, NameFile);
-                // }
+                    // Envia mail de conformidad al usuario
+                    libreria.sendrptuser(NAME_REPORT, 3, NameFile);
+                }
             } else {
                 // Debug
                 log.error({

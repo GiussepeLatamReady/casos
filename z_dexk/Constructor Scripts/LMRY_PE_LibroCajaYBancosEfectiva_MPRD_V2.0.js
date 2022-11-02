@@ -3,16 +3,16 @@
 ||                                                              ||
 ||  File Name: LMRY_PE_LibroCajaYBancosEfectiva_MPRD_V2.0.js    ||
 ||                                                              ||
-||  Version Date         Author        Remarks                  ||
-||  2.0    mayo 16 2022  LatamReady    Use Script 2.0           ||
+||  Version    Date         Author              Remarks         ||
+||  2.0    Octubre 31 2022  Giussepe Delgado    Use Script 2.0  ||
  \= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = */
 /**
  *@NApiVersion 2.0
  *@NScriptType MapReduceScript
  *@Name LMRY_PE_LibroCajaYBancosEfectiva_MPRD_V2.0.js
  */
-define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/config"],
-    function (search, task, runtime, file, record, format, config) {
+define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/config", "./PE_Library_Mensual/LMRY_PE_Reportes_LBRY_V2.0.js", "/SuiteBundles/Bundle 37714/Latam_Library/LMRY_libSendingEmailsLBRY_V2.0.js"],
+    function (search, task, runtime, file, record, format, config, libreria, libreriaLicense) {
 
         var NAME_REPORT = "Libro de Caja y Bancos Efectiva";
         var LMRY_SCRIPT = 'LMRY_PE_LibroCajaYBancosEfectiva_MPRD_V2.0.js';
@@ -76,14 +76,11 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
                 log.debug("arrMovementsPayExpRep",arrMovementsPayExpRep.length)
                 log.debug("arrTransactions",arrTransactions.length)
 
-                //recallControl();
-                //log.debug("arrTransactions [parse]",arrTransactions.length)
-                //log.debug("arrTransactions ",arrTransactions)
                 return arrTransactions;
                 //return [];
             } catch (err) {
 
-                //libreria.sendMail(LMRY_SCRIPT, ' [ ObtainNameSubsidiaria ] ' + err);
+                libreria.sendMail(LMRY_SCRIPT, ' [ ObtainNameSubsidiaria ] ' + err);
                 log.error("[ getInputData ]", err);
                 return [{
                     "isError": "T",
@@ -110,7 +107,9 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
                     FEATURES.SUBSID = runtime.isFeatureInEffect({
                         feature: "SUBSIDIARIES"
                     });
-                    PARAMETERS.SUBSID = '2';
+                    PARAMETERS.SUBSID = objContext.getParameter({
+                        name: 'custscript_lmry_pe_caj_banc_efec_subs_mp'
+                    });
                     var key;
                     if (dataInput[11] == 'SALDO INICIAL') {
                         key = 'previousBalance';
@@ -148,12 +147,9 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
 
                     } else {
                         var bankInfo = filterAccounts(dataInput);
-                        //log.debug("bank",bankInfo);
-                        //log.debug("bankcode",bankInfo.bankCode);
                         if ((bankInfo.bankCode == '' || bankInfo.bankAccount == '') && (bankInfo.type == 'Bank')) {
                             if (bankInfo.sunatHabil || bankInfo.sunatHabil == 'T') {
                                 if (bankInfo.onceSunat == '10') {
-                                    //log.debug("flag","ingresado 1")
                                     if (key == 'movements') {
                                         updatePeriod(dataInput);
                                     }
@@ -166,7 +162,6 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
                                 }
                             } else {
                                 if (bankInfo.onceNum == '10') {
-                                    //log.debug("flag","ingresado 2")
                                     if (key == 'movements') {
                                         updatePeriod(dataInput);
                                     }
@@ -209,7 +204,6 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
                 }
 
                 var arrTransactions = new Array();
-                var isRecall;
                 context.output.iterator().each(function (key, value) {
                                       
                     arrTransactions.push(JSON.parse(value).arrTransactions);
@@ -240,21 +234,15 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
                         saveAuxiliarFile(stringTemporal); 
                     }                                                
                 } 
-                // if (isRecall=='T') {
-                //     log.debug("console","rellamado")                    
-                //     recallMapReduce();
-                // }else{
-                //     log.debug("console","Pintar")                   
-                //     callSchedule();
-                // }
+               
                 log.debug("console","Pintar")                   
                 callSchedule();
                 
             } catch (err) {
 
                 log.error("[ summarize ]", err);
-                //updateLogGenerator('error');
-                //libreria.sendMail(LMRY_SCRIPT, ' [ Summarize ] ' + err);
+                updateLogGenerator('error');
+                libreria.sendMail(LMRY_SCRIPT, ' [ Summarize ] ' + err);
             }
         }
 
@@ -262,41 +250,37 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
         function getParametersAndFeatures() {
             // Parametros
 
-            //paramperiodo
-            PARAMETERS.PERIOD = '128';
+             //paramperiodo
+             PARAMETERS.PERIOD = objContext.getParameter({
+                name: 'custscript_lmry_pe_caj_banc_efec_peri_mp'
+            });
 
             //paramClosedPeriod
-            PARAMETERS.CLOSED_PERIOD ='F';
+            PARAMETERS.CLOSED_PERIOD = objContext.getParameter({
+                name: 'custscript_lmry_pe_caj_banc_efec_cier_mp'
+            });
             //paramsubsidi
-            PARAMETERS.SUBSID = '2';
+            PARAMETERS.SUBSID = objContext.getParameter({
+                name: 'custscript_lmry_pe_caj_banc_efec_subs_mp'
+            });
             //paramMultibook
-            PARAMETERS.MULTIBOOK = ' ';
+            PARAMETERS.MULTIBOOK = objContext.getParameter({
+                name: 'custscript_lmry_pe_caj_banc_efec_mult_mp'
+            });
             //paramrecoid
-            PARAMETERS.RECORDID = '';
+            PARAMETERS.RECORDID = objContext.getParameter({
+                name: 'custscript_lmry_pe_caj_banc_efec_reid_mp'
+            });
 
             //paramTipoExtPeriodo
-            PARAMETERS.TYPE_EXT_PERIOD = '1';
+            PARAMETERS.TYPE_EXT_PERIOD = objContext.getParameter({
+                name: 'custscript_lmry_pe_caj_banc_efec_extp_mp'
+            });
 
             //paramIndicadorOp
-            PARAMETERS.OPERATIONS_INDICATOR ='1';
-
-            // PARAMETERS.FILES = objContext.getParameter({
-            //     name: 'custscript_smc_pe_caj_banc_efec_file_mp'
-            // });
-            // PARAMETERS.LIMIT = objContext.getParameter({
-            //     name: 'custscript_smc_pe_caj_banc_efec_lmit_mp'
-            // });
-            //log.debug("PARAMETERS.FILES [NEW]",PARAMETERS.FILES)
-            // if (PARAMETERS.FILES==''||PARAMETERS.FILES==' '||PARAMETERS.FILES==null) {
-            //     PARAMETERS.FILES = new Array();
-            // }else{
-            //     PARAMETERS.FILES =JSON.parse(PARAMETERS.FILES);
-            // }
-            // if (PARAMETERS.LIMIT==''||PARAMETERS.LIMIT==' '||PARAMETERS.LIMIT==null) {
-            //     PARAMETERS.LIMIT = 0;
-            // }else{
-            //     PARAMETERS.LIMIT = parseInt(PARAMETERS.LIMIT);
-            // }
+            PARAMETERS.OPERATIONS_INDICATOR = objContext.getParameter({
+                name: 'custscript_lmry_pe_caj_banc_efec_idop_mp'
+            });
 
             //featuresubs 
             FEATURES.SUBSID = runtime.isFeatureInEffect({
@@ -384,50 +368,7 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
 
 
         }
-
-        function recallControl(){
-            //Controla la cantidad de transacciones a procesar, si excede al valor de "range" realiza un rellamado
-            var lengthTransactions=arrTransactions.length;
-            var isRecall = 'F';
-            if (lengthTransactions!=0) {
-                var newLimit = PARAMETERS.LIMIT + range;
-
-                
-                log.debug("newLimit", newLimit)
-
-                if (newLimit >= lengthTransactions) {
-                    arrTransactions = arrTransactions.slice(PARAMETERS.LIMIT, lengthTransactions);
-                } else {
-                    arrTransactions = arrTransactions.slice(PARAMETERS.LIMIT, newLimit);
-                    isRecall = 'T';
-                }
-            }
-            
-            
-
-            arrTransactions.push([isRecall])
-        }
-
-        function test(){
-            var lengthTransactions=arrTransactions.length;
-            var isRepeat= true;
-            var base=0;
-            var range=50;
-            while (isRepeat) {
-                var newLimit = base + range;
-                if (newLimit >= lengthTransactions) {
-                    arrTransactions = arrTransactions.slice(base, lengthTransactions);
-                    isRepeat= false;
-                } else {
-                    arrTransactions = arrTransactions.slice(base, newLimit);
-                    base+=range;
-                    
-                }
-            }
-            
-
-            arrTransactions.push([isRecall])
-        }
+    
         function updatePeriod(transactions){
             if (transactions[21] != null && transactions[21] != '' && transactions[21] != ' ') {
                 transactions[21] = getPeriodUpdate(transactions[21]);
@@ -543,14 +484,13 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
             var activateSpecialPeriod = false;
             var licenses = new Array();
             if (FEATURES.SUBSID) {
-                ///licenses = libreriaLicense.getLicenses(PARAMETERS.SUBSID);
-                activateSpecialPeriod = false;
+                licenses = libreriaLicense.getLicenses(PARAMETERS.SUBSID);
+                activateSpecialPeriod = libreriaLicense.getAuthorization(664, licenses);
             }
             return activateSpecialPeriod;
         }
 
         function getSpecialPeriodData() {
-            //ObtenerDatosPeriodo()
             var arrDate = new Array();
             var searchPeriodSpecial = search.create({
                 type: "customrecord_lmry_special_accountperiod",
@@ -2926,820 +2866,6 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
 
         }
 
-        function joinRepeat(previousBalance) {
-            var newPreviousBalance = [];
-            var long = previousBalance.length;
-            var i = 0;
-
-            while (i < long) {
-                var montoAcumulado = Number(previousBalance[i][13]);
-                var montoAcumulado2 = Number(previousBalance[i][14]);
-                var j = i + 1;
-                while (j < long) {
-                    if (previousBalance[i][0] == previousBalance[j][0]) {
-                        montoAcumulado += Number(previousBalance[j][13]);
-                        montoAcumulado2 += Number(previousBalance[j][14]);
-                        previousBalance.splice(j, 1);
-                        long--;
-                    } else {
-                        j++;
-                    }
-                }
-                previousBalance[i][13] = (montoAcumulado).toFixed(2);
-                previousBalance[i][14] = (montoAcumulado2).toFixed(2);
-                newPreviousBalance.push(previousBalance[i]);
-                i++;
-            }
-            return newPreviousBalance;
-        }
-
-        function joinMovements(arrMovements, arrMovementsPayments) {
-            var arrTemp = new Array();
-            var cont = 0;
-
-            var arrReturn = new Array();
-            var cont_return = 0;
-            if (arrMovements.length != 0 && arrMovementsPayments.length != 0) {
-                var movimiento1 = '';
-                var num2 = 0;
-                for (var i = 0; i < arrMovements.length; i++) {
-                    for (var j = 0; j < arrMovementsPayments.length; j++) {
-                        if (arrMovementsPayments[j][0] == arrMovements[i][15]) {
-                            /** */
-
-                            /** */
-                            var arrAux = new Array();
-                            arrAux[0] = arrMovements[i][0];
-                            //Hubo un cambio para el CUO por cuestion de un CASO se modifico solo la linea sgt arrAux[1]
-                            arrAux[1] = '' + arrMovements[i][1] + '-' + '0';
-                            arrAux[2] = arrMovements[i][2];
-                            arrAux[3] = arrMovements[i][3];
-                            arrAux[4] = arrMovements[i][4];
-                            arrAux[5] = arrMovementsPayments[j][2];
-                            arrAux[6] = arrMovementsPayments[j][3];
-                            arrAux[7] = arrMovementsPayments[j][4];
-                            arrAux[8] = arrMovements[i][8];
-                            arrAux[9] = arrMovementsPayments[j][5];
-                            arrAux[10] = arrMovements[i][10];
-                            arrAux[11] = arrMovements[i][11];
-                            arrAux[12] = arrMovements[i][12];
-                            arrAux[13] = arrMovementsPayments[j][6];
-                            arrAux[14] = arrMovementsPayments[j][7];
-                            arrAux[15] = arrMovements[i][15];
-                            arrAux[21] = arrMovements[i][21];
-                            arrAux[22] = arrMovementsPayments[j][10];
-                            arrAux[23] = arrMovements[i][23];
-                            arrTemp[cont] = arrAux;
-
-
-                            cont++;
-                        }
-                    }
-                }
-
-                for (var z = 0; z < cont; z++) {
-                    var axi = arrTemp[z][1];
-                    var num = 0;
-                    for (var y = z + 1; y < cont; y++) {
-                        if (axi == arrTemp[y][1]) {
-                            num++;
-                            arrTempArr = arrTemp[y][1].split('-');
-                            arrTemp[y][1] = arrTempArr[0];
-                            arrTemp[y][1] = arrTemp[y][1] + '-' + num;//ANTES:Number(arrTemp[y][1]) + 1
-                            arrTemp[y][1] = '' + arrTemp[y][1];
-                        }
-                    }
-                }
-                
-                for (var i = 0; i < arrMovements.length; i++) {
-                    var flag = false;
-                    for (var j = 0; j < arrTemp.length; j++) {
-                        if (arrMovements[i][15] == arrTemp[j][15]) {
-                            flag = true;
-
-                            var arrAux = new Array();
-                            arrAux[0] = arrTemp[j][0];
-                            arrAux[1] = arrTemp[j][1];
-                            arrAux[2] = arrTemp[j][2];
-                            arrAux[3] = arrTemp[j][3];
-                            arrAux[4] = arrTemp[j][4];
-                            arrAux[5] = arrTemp[j][5];
-                            arrAux[6] = arrTemp[j][6];
-                            arrAux[7] = arrTemp[j][7];
-                            arrAux[8] = arrTemp[j][8];
-                            arrAux[9] = arrTemp[j][9];
-                            arrAux[10] = arrTemp[j][10];
-                            arrAux[11] = arrTemp[j][11];
-                            arrAux[12] = arrTemp[j][12];
-                            arrAux[13] = arrTemp[j][13];
-                            arrAux[14] = arrTemp[j][14];
-                            arrAux[15] = arrTemp[j][15];
-                            arrAux[21] = arrTemp[j][21];
-                            arrAux[22] = arrTemp[j][22];//aqui
-                            arrAux[23] = arrTemp[j][23];
-
-                            arrReturn[cont_return] = arrAux;
-                            cont_return++;
-                        }
-                    }
-                    
-                    if (!flag) {
-                        var arrAux = new Array();
-                        arrAux[0] = arrMovements[i][0];
-                        if (movimiento1 != arrMovements[i][1]) {
-                            arrAux[1] = arrMovements[i][1] + '-' + '0';
-                            movimiento1 = arrMovements[i][1];
-                            num2 = 0;
-                        } else {
-                            num2++
-                            movimiento1 = arrMovements[i][1];
-                            arrMovements[i][1] = arrMovements[i][1] + '-' + num2;
-                            arrAux[1] = '' + arrMovements[i][1];
-                        }
-                        arrAux[2] = arrMovements[i][2];
-                        arrAux[3] = arrMovements[i][3];
-                        arrAux[4] = arrMovements[i][4];
-                        arrAux[5] = arrMovements[i][5];
-                        arrAux[6] = arrMovements[i][6];
-                        arrAux[7] = arrMovements[i][7];
-                        arrAux[8] = arrMovements[i][8];
-                        arrAux[9] = arrMovements[i][9];
-                        arrAux[10] = arrMovements[i][10];
-                        arrAux[11] = arrMovements[i][11];
-                        arrAux[12] = arrMovements[i][12];
-                        arrAux[13] = arrMovements[i][13];
-                        arrAux[14] = arrMovements[i][14];
-                        arrAux[15] = arrMovements[i][15];
-                        arrAux[21] = arrMovements[i][21];
-                        arrAux[22] = arrMovements[i][22];
-                        arrAux[23] = arrMovements[i][23];
-                        arrReturn[cont_return] = arrAux;
-                        cont_return++;
-                    }
-                }
-            } else {
-                arrReturn = arrMovements;
-            }
-
-            return arrReturn;
-        }
-
-        function joinTransactions(arrPreviousBalance, arrMovements) {
-            var cont = 0;
-            var arrTransactions = new Array();
-            var periodStartDateTranform = transformDate(periodStartDate);
-            var periodEndDateTranform = transformDate(periodEndDate)
-            if (arrPreviousBalance.length != 0 && arrMovements.length != 0) {
-                for (var i = 0; i < arrPreviousBalance.length; i++) {
-                    var arrIni = new Array();
-
-                    var saldoInicialNumber = Number(arrPreviousBalance[i][13]) - Number(arrPreviousBalance[i][14]);
-                    if (saldoInicialNumber > 0) {
-                        arrPreviousBalance[i][13] = saldoInicialNumber;
-                        arrPreviousBalance[i][14] = 0;
-                    } else {
-                        arrPreviousBalance[i][13] = 0;
-                        arrPreviousBalance[i][14] = Number(saldoInicialNumber) * (-1);
-                    }
-
-                    arrIni[0] = arrPreviousBalance[i][0];
-                    arrIni[1] = arrPreviousBalance[i][1];
-                    arrIni[2] = '';
-                    arrIni[3] = arrPreviousBalance[i][3];
-                    arrIni[4] = arrPreviousBalance[i][4];
-                    arrIni[5] = '00';
-                    arrIni[6] = '';
-                    arrIni[7] = '0';
-                    arrIni[8] = periodStartDateTranform;
-                    arrIni[9] = '';
-                    arrIni[10] = periodStartDateTranform;
-                    arrIni[11] = arrPreviousBalance[i][11];
-                    arrIni[12] = arrPreviousBalance[i][12];
-                    arrIni[13] = Number(arrPreviousBalance[i][13]).toFixed(2);
-                    arrIni[14] = Number(arrPreviousBalance[i][14]).toFixed(2);
-                    arrIni[15] = arrPreviousBalance[i][15];
-                    arrIni[16] = 'A';
-
-                    arrTransactions[cont] = arrIni;
-
-                    arrTransactions[cont][0] = 'SI' + arrTransactions[cont][0];
-                    
-                    var since = cont;
-                    cont++;
-
-                    for (var j = 0; j < arrMovements.length; j++) {
-
-                        if (arrAccountingContextVerif.length != 0) {
-                            if (arrPreviousBalance[i][0] == arrMovements[j][0]) {
-                                var arrMov = new Array();
-
-                                arrMov[0] = arrMovements[j][0];
-                                arrMov[1] = arrMovements[j][1];
-                                arrMov[2] = arrMovements[j][2];
-                                arrMov[3] = arrMovements[j][3];
-                                //arrMov[4] = arrMovimientos[j][4];
-                                arrMov[4] = arrPreviousBalance[i][4];
-                                arrMov[5] = arrMovements[j][5];
-                                arrMov[6] = arrMovements[j][6];
-                                arrMov[7] = arrMovements[j][7];
-                                arrMov[8] = arrMovements[j][8];
-                                arrMov[9] = arrMovements[j][9];
-                                arrMov[10] = arrMovements[j][10];
-                                arrMov[11] = arrMovements[j][11];
-                                arrMov[12] = arrMovements[j][12];
-                                arrMov[13] = arrMovements[j][13];
-                                arrMov[14] = arrMovements[j][14];
-                                arrMov[15] = arrMovements[j][15];
-                                arrMov[16] = 'M';
-                                arrMov[17] = arrMovements[j][21];
-                                arrMov[18] = arrMovements[j][22];
-
-                                arrTransactions[cont] = arrMov;
-                                
-                                cont++;
-                                
-                            }
-                        } else if (arrPreviousBalance[i][15] == arrMovements[j][4]) {
-                            var arrMov = new Array();
-
-                            arrMov[0] = arrMovements[j][0];
-                            arrMov[1] = arrMovements[j][1];
-                            arrMov[2] = arrMovements[j][2];
-                            arrMov[3] = arrMovements[j][3];
-                            //arrMov[4] = arrMovimientos[j][4];
-                            arrMov[4] = arrPreviousBalance[i][4];
-                            arrMov[5] = arrMovements[j][5];
-                            arrMov[6] = arrMovements[j][6];
-                            arrMov[7] = arrMovements[j][7];
-                            arrMov[8] = arrMovements[j][8];
-                            arrMov[9] = arrMovements[j][9];
-                            arrMov[10] = arrMovements[j][10];
-                            arrMov[11] = arrMovements[j][11];
-                            arrMov[12] = arrMovements[j][12];
-                            arrMov[13] = arrMovements[j][13];
-                            arrMov[14] = arrMovements[j][14];
-                            arrMov[15] = arrMovements[j][15];
-                            arrMov[16] = 'M';
-                            arrMov[17] = arrMovements[j][21];
-                            arrMov[18] = arrMovements[j][22];
-
-                            arrTransactions[cont] = arrMov;
-                            
-                            cont++;
-                            
-                        }
-                    }
-                   
-                    var sumColum13 = 0.00;
-                    var sumColum14 = 0.00;
-
-                    for (var k = since; k < arrTransactions.length; k++) {
-                        sumColum13 += Number(arrTransactions[k][13]);
-                        sumColum14 += Number(arrTransactions[k][14]);
-                    }
-                    var saldoFinalNumber = Number(sumColum13) - Number(sumColum14);
-
-                    if (saldoFinalNumber > 0) {
-                        sumColum13 = saldoFinalNumber;
-                        sumColum14 = 0;
-                    } else {
-                        sumColum13 = 0;
-                        sumColum14 = Number(saldoFinalNumber) * (-1);
-
-                    }
-
-                    var arrTemp = new Array();
-                    arrTemp[0] = 'SF' + arrTransactions[since][0].substring(2, arrTransactions[since][0].length);
-                    arrTemp[1] = arrTransactions[since][1];
-                    arrTemp[2] = '';
-                    arrTemp[3] = arrTransactions[since][3];
-                    arrTemp[4] = arrTransactions[since][4];
-                    arrTemp[5] = '00';
-                    arrTemp[6] = '';
-                    arrTemp[7] = '0';
-                    arrTemp[8] = periodEndDateTranform;
-                    arrTemp[9] = '';
-                    arrTemp[10] = periodEndDateTranform;
-                    arrTemp[11] = 'SALDO FINAL';
-                    arrTemp[12] = arrTransactions[since][12];
-                    arrTemp[13] = sumColum13.toFixed(2);
-                    arrTemp[14] = sumColum14.toFixed(2);
-                    arrTemp[15] = arrTransactions[since][15];
-                    arrTemp[16] = 'C';
-
-                    arrTransactions[cont] = arrTemp;
-                    
-                    cont++;
-                    since = cont;
-                }
-
-                var flag = true;
-                var arrLast = new Array();
-                var currency = '';
-                var currencyAnterior = '';
-                var key = 0;
-                for (var i = 0; i < arrMovements.length; i++) {
-                    var sumColum13 = 0.00;
-                    var sumColum14 = 0.00;
-
-                    for (var j = 0; j < arrPreviousBalance.length; j++) {
-                        if (arrMovements[i][0] == arrPreviousBalance[j][0]) {
-                            break;
-                        } else {
-                            if (j == arrPreviousBalance.length - 1) {
-                                currency = arrMovements[i][23];
-                                if (arrTransactions[arrTransactions.length - 1][0] != arrMovements[i][0]) {
-                                    //TODO: add SF
-                                    if (!flag) {
-                                        var arrTemp = new Array();
-                                        arrTemp[0] = 'SF' + arrMovements[key][0];
-                                        arrTemp[1] = arrMovements[key][1];
-                                        arrTemp[2] = '';
-                                        arrTemp[3] = arrMovements[key][3];
-                                        //arrTemp[4] = arrMovimientos[i-1][4];
-                                        arrTemp[4] = currencyAnterior;
-                                        arrTemp[5] = '00';
-                                        arrTemp[6] = '';
-                                        arrTemp[7] = '0';
-                                        arrTemp[8] = periodEndDateTranform;
-                                        arrTemp[9] = '';
-                                        arrTemp[10] = periodEndDateTranform;
-                                        arrTemp[11] = 'SALDO FINAL';
-                                        arrTemp[12] = arrMovements[key][12];
-                                        arrTemp[13] = sumColum13.toFixed(2);
-                                        arrTemp[14] = sumColum14.toFixed(2);
-                                        arrTemp[15] = arrMovements[key][15];
-                                        arrTemp[16] = 'C';
-
-                                        arrTransactions[cont] = arrTemp;
-                                       
-                                        cont++;
-                                        
-                                        sumColum13 = 0.00;
-                                        sumColum14 = 0.00;
-                                    }
-                                    //TODO: add SI
-                                    var arrInicial = new Array();
-
-                                    arrInicial[0] = arrMovements[i][0];
-                                    arrInicial[1] = arrMovements[i][1];
-                                    arrInicial[2] = '';
-                                    arrInicial[3] = arrMovements[i][3];
-                                    //arrInicial[4] = arrMovimientos[i][4];
-                                    arrInicial[4] = currency;
-                                    arrInicial[5] = '00';
-                                    arrInicial[6] = '';
-                                    arrInicial[7] = '0';
-                                    arrInicial[8] = periodStartDateTranform;
-                                    arrInicial[9] = '';
-                                    arrInicial[10] = periodStartDateTranform;
-                                    arrInicial[11] = 'SALDO INICIAL';
-                                    arrInicial[12] = arrMovements[i][12];
-                                    arrInicial[13] = 0.00;
-                                    arrInicial[14] = 0.00;
-                                    arrInicial[15] = arrMovements[i][15];
-                                    arrInicial[16] = 'A';
-
-                                    arrTransactions[cont] = arrInicial;
-                                    
-                                    arrTransactions[cont][0] = 'SI' + arrTransactions[cont][0];
-                                    key = i;
-                                    
-                                    cont++;
-
-                                    var arrMov = new Array();
-
-                                    arrMov[0] = arrMovements[i][0];
-                                    arrMov[1] = arrMovements[i][1];
-                                    arrMov[2] = arrMovements[i][2];
-                                    arrMov[3] = arrMovements[i][3];
-                                    //arrMov[4] = arrMovimientos[i][4];
-                                    arrMov[4] = currency;
-                                    arrMov[5] = arrMovements[i][5];
-                                    arrMov[6] = arrMovements[i][6];
-                                    arrMov[7] = arrMovements[i][7];
-                                    arrMov[8] = arrMovements[i][8];
-                                    arrMov[9] = arrMovements[i][9];
-                                    arrMov[10] = arrMovements[i][10];
-                                    arrMov[11] = arrMovements[i][11];
-                                    arrMov[12] = arrMovements[i][12];
-                                    arrMov[13] = arrMovements[i][13];
-                                    arrMov[14] = arrMovements[i][14];
-                                    arrMov[15] = arrMovements[i][15];
-                                    arrMov[16] = 'M';
-                                    arrMov[17] = arrMovements[i][21];
-                                    arrMov[18] = arrMovements[i][22];
-
-                                    sumColum13 += arrMovements[i][13];
-                                    sumColum14 += arrMovements[i][14];
-
-                                    arrLast = arrMov;
-                                    arrTransactions[cont] = arrMov;
-                                    
-                                    cont++;
-                                    
-                                } else {
-                                    var arrMov = new Array();
-
-                                    arrMov[0] = arrMovements[i][0];
-                                    arrMov[1] = arrMovements[i][1];
-                                    arrMov[2] = arrMovements[i][2];
-                                    arrMov[3] = arrMovements[i][3];
-                                    //arrMov[4] = arrMovimientos[i][4];
-                                    arrMov[4] = currency;
-                                    arrMov[5] = arrMovements[i][5];
-                                    arrMov[6] = arrMovements[i][6];
-                                    arrMov[7] = arrMovements[i][7];
-                                    arrMov[8] = arrMovements[i][8];
-                                    arrMov[9] = arrMovements[i][9];
-                                    arrMov[10] = arrMovements[i][10];
-                                    arrMov[11] = arrMovements[i][11];
-                                    arrMov[12] = arrMovements[i][12];
-                                    arrMov[13] = arrMovements[i][13];
-                                    arrMov[14] = arrMovements[i][14];
-                                    arrMov[15] = arrMovements[i][15];
-                                    arrMov[16] = 'M';
-                                    arrMov[17] = arrMovements[i][21];
-                                    arrMov[18] = arrMovements[i][22];
-
-                                    sumColum13 += arrMovements[i][13];
-                                    sumColum14 += arrMovements[i][14];
-
-                                    arrLast = arrMov;
-                                    arrTransactions[cont] = arrMov;
-                                    
-                                    cont++;
-                                    
-                                }
-                                currencyAnterior = currency;
-                                flag = false;
-                            }
-                        }
-                    }
-                }
-
-                if (arrLast.length != 0) {
-                    var sumColum13Last = 0.00;
-                    var sumColum14Last = 0.00;
-
-                    for (var k = arrTransactions.length - 1; k >= 0; k--) {
-                        if (arrTransactions[k][0].substring(0, 2) == 'SI') {
-                            break;
-                        } else {
-                            sumColum13Last += Number(arrTransactions[k][13]);
-                            sumColum14Last += Number(arrTransactions[k][14]);
-                        }
-
-                    }
-
-                    var saldoFinalNumber = Number(sumColum13Last) - Number(sumColum14Last);
-
-                    if (saldoFinalNumber > 0) {
-                        sumColum13Last = saldoFinalNumber;
-                        sumColum14Last = 0;
-                    } else {
-                        sumColum13Last = 0;
-                        sumColum14Last = Number(saldoFinalNumber) * (-1);
-                    }
-
-                    var arrTemp = new Array();
-                    arrTemp[0] = 'SF' + arrLast[0];
-                    arrTemp[1] = arrLast[1];
-                    arrTemp[2] = '';
-                    arrTemp[3] = arrLast[3];
-                    arrTemp[4] = arrLast[4];
-                    arrTemp[5] = '00';
-                    arrTemp[6] = '';
-                    arrTemp[7] = '0';
-                    arrTemp[8] = periodEndDateTranform;
-                    arrTemp[9] = '';
-                    arrTemp[10] = periodEndDateTranform;
-                    arrTemp[11] = 'SALDO FINAL';
-                    arrTemp[12] = arrLast[12];
-                    arrTemp[13] = sumColum13Last.toFixed(2);
-                    arrTemp[14] = sumColum14Last.toFixed(2);
-                    arrTemp[15] = arrLast[15];
-                    arrTemp[16] = 'C';
-
-                    arrTransactions[cont] = arrTemp;
-                    
-                    cont++;
-                }
-
-            } else if (arrMovements.length != 0 && arrPreviousBalance.length == 0) {
-                var pivote = arrMovements[0][0];
-                var currency = arrMovements[0][23];
-                var currencyAnterior = '';
-                var arrInicial = new Array();
-
-                arrInicial[0] = 'SI' + arrMovements[0][0];
-                arrInicial[1] = arrMovements[0][1];
-                arrInicial[2] = '';
-                arrInicial[3] = arrMovements[0][3];
-                arrInicial[4] = currency;
-                arrInicial[5] = '00';
-                arrInicial[6] = '';
-                arrInicial[7] = '0';
-                arrInicial[8] = periodStartDateTranform;
-                arrInicial[9] = '';
-                arrInicial[10] = periodStartDateTranform;
-                arrInicial[11] = 'SALDO INICIAL';
-                arrInicial[12] = arrMovements[0][12];
-                arrInicial[13] = 0.00;
-                arrInicial[14] = 0.00;
-                arrInicial[15] = arrMovements[0][15];
-                arrInicial[16] = 'A';
-
-                arrTransactions[cont] = arrInicial;
-                
-                var since = cont;
-                cont++;
-
-                for (var i = 0; i < arrMovements.length; i++) {
-                    if (pivote == arrMovements[i][0]) {
-                        var arrMov = new Array();
-                        arrMov[0] = arrMovements[i][0];
-                        arrMov[1] = arrMovements[i][1];
-                        arrMov[2] = arrMovements[i][2];
-                        arrMov[3] = arrMovements[i][3];
-                        arrMov[4] = currency;
-                        arrMov[5] = arrMovements[i][5];
-                        arrMov[6] = arrMovements[i][6];
-                        arrMov[7] = arrMovements[i][7];
-                        arrMov[8] = arrMovements[i][8];
-                        arrMov[9] = arrMovements[i][9];
-                        arrMov[10] = arrMovements[i][10];
-                        arrMov[11] = arrMovements[i][11];
-                        arrMov[12] = arrMovements[i][12];
-                        arrMov[13] = arrMovements[i][13];
-                        arrMov[14] = arrMovements[i][14];
-                        arrMov[15] = arrMovements[i][15];
-                        arrMov[16] = 'M';
-                        arrMov[17] = arrMovements[i][21];
-                        arrMov[18] = arrMovements[i][22];
-                        arrTransactions[cont] = arrMov;
-                        
-                        cont++;
-                        
-                    } else {
-                        //Linea Saldo Final
-                        var arrTempSF = new Array();
-
-                        var sumColum13 = 0.00;
-                        var sumColum14 = 0.00;
-
-                        currencyAnterior = currency;
-                        currency = arrMovements[i][23];
-
-                        for (var k = since; k < arrTransactions.length; k++) {
-                            sumColum13 += Number(arrTransactions[k][13]);
-                            sumColum14 += Number(arrTransactions[k][14]);
-                        }
-
-                        var saldoFinalNumber = Number(sumColum13) - Number(sumColum14);
-
-                        if (saldoFinalNumber > 0) {
-                            sumColum13 = saldoFinalNumber;
-                            sumColum14 = 0;
-                        } else {
-                            sumColum13 = 0;
-                            sumColum14 = Number(saldoFinalNumber) * (-1);
-                        }
-
-                        arrTempSF[0] = 'SF' + arrMovements[i - 1][0];
-                        arrTempSF[1] = arrMovements[i - 1][1];
-                        arrTempSF[2] = '';
-                        arrTempSF[3] = arrMovements[i - 1][3];
-                        arrTempSF[4] = currencyAnterior;
-                        arrTempSF[5] = '00';
-                        arrTempSF[6] = '';
-                        arrTempSF[7] = '0';
-                        arrTempSF[8] = periodEndDateTranform;
-                        arrTempSF[9] = '';
-                        arrTempSF[10] = periodEndDateTranform;
-                        arrTempSF[11] = 'SALDO FINAL';
-                        arrTempSF[12] = arrMovements[i - 1][12];
-                        arrTempSF[13] = sumColum13.toFixed(2);
-                        arrTempSF[14] = sumColum14.toFixed(2);
-                        arrTempSF[15] = arrMovements[i - 1][15];
-                        arrTempSF[16] = 'C';
-
-                        arrTransactions[cont] = arrTempSF;
-                        
-                        cont++;
-                        since = cont;
-
-                        //Linea Saldo Inicial
-                        var arrTempSI = new Array();
-                        arrTempSI[0] = 'SI' + arrMovements[i][0];
-                        arrTempSI[1] = arrMovements[i][1];
-                        arrTempSI[2] = '';
-                        arrTempSI[3] = arrMovements[i][3];
-                        arrTempSI[4] = currency;
-                        arrTempSI[5] = '00';
-                        arrTempSI[6] = '';
-                        arrTempSI[7] = '0';
-                        arrTempSI[8] = periodStartDateTranform;
-                        arrTempSI[9] = '';
-                        arrTempSI[10] = periodStartDateTranform;
-                        arrTempSI[11] = 'SALDO INICIAL';
-                        arrTempSI[12] = arrMovements[i][12];
-                        arrTempSI[13] = 0.00;
-                        arrTempSI[14] = 0.00;
-                        arrTempSI[15] = arrMovements[i][15];
-                        arrTempSI[16] = 'A';
-
-                        arrTransactions[cont] = arrTempSI;
-                        
-                        cont++;
-
-                        arrTransactions[cont] = arrMovements[i];
-                        arrTransactions[cont][4] = currency;
-                        arrTransactions[cont][16] = 'M';
-                        arrTransactions[cont][17] = arrMovements[i][21];
-
-                        cont++;
-
-                        pivote = arrMovements[i][0];
-                    }
-
-                    if (i == arrMovements.length - 1) {
-                        var arrTempSF = new Array();
-
-                        var sumColum13 = 0.00;
-                        var sumColum14 = 0.00;
-
-                        for (var k = since; k < arrTransactions.length; k++) {
-                            sumColum13 += Number(arrTransactions[k][13]);
-                            sumColum14 += Number(arrTransactions[k][14]);
-                        }
-
-                        var saldoFinalNumber = Number(sumColum13) - Number(sumColum14);
-
-                        if (saldoFinalNumber > 0) {
-                            sumColum13 = saldoFinalNumber;
-                            sumColum14 = 0;
-                        } else {
-                            sumColum13 = 0;
-                            sumColum14 = Number(saldoFinalNumber) * (-1);
-
-                        }
-
-                        arrTempSF[0] = 'SF' + arrMovements[i][0];
-                        arrTempSF[1] = arrMovements[i][1];
-                        arrTempSF[2] = '';
-                        arrTempSF[3] = arrMovements[i][3];
-                        arrTempSF[4] = currency;
-                        arrTempSF[5] = '00';
-                        arrTempSF[6] = '';
-                        arrTempSF[7] = '0';
-                        arrTempSF[8] = periodEndDateTranform;
-                        arrTempSF[9] = '';
-                        arrTempSF[10] = periodEndDateTranform;
-                        arrTempSF[11] = 'SALDO FINAL';
-                        arrTempSF[12] = arrMovements[i][12];
-                        arrTempSF[13] = sumColum13.toFixed(2);
-                        arrTempSF[14] = sumColum14.toFixed(2);
-                        arrTempSF[15] = arrMovements[i][15];
-                        arrTempSF[16] = 'C';
-
-                        arrTransactions[cont] = arrTempSF;
-                        
-                    }
-                }
-
-            } else if (arrPreviousBalance.length != 0 && arrMovements.length == 0) {
-
-                for (var i = 0; i < arrPreviousBalance.length; i++) {
-                    var arrIni = new Array();
-
-                    var saldoInicialNumber = Number(arrPreviousBalance[i][13]) - Number(arrPreviousBalance[i][14]);
-                    if (saldoInicialNumber > 0) {
-                        arrPreviousBalance[i][13] = saldoInicialNumber;
-                        arrPreviousBalance[i][14] = 0;
-                    } else {
-                        arrPreviousBalance[i][13] = 0;
-                        arrPreviousBalance[i][14] = Number(saldoInicialNumber) * (-1);
-                    }
-
-                    arrIni[0] = arrPreviousBalance[i][0];
-                    arrIni[1] = arrPreviousBalance[i][1];
-                    arrIni[2] = '';
-                    arrIni[3] = arrPreviousBalance[i][3];
-                    arrIni[4] = arrPreviousBalance[i][4];
-                    arrIni[5] = '00';
-                    arrIni[6] = '';
-                    arrIni[7] = '0';
-                    arrIni[8] = periodStartDateTranform;
-                    arrIni[9] = '';
-                    arrIni[10] = periodStartDateTranform;
-                    arrIni[11] = 'SALDO INICIAL';
-                    arrIni[12] = arrPreviousBalance[i][12];
-                    arrIni[13] = Number(arrPreviousBalance[i][13]).toFixed(2);
-                    arrIni[14] = Number(arrPreviousBalance[i][14]).toFixed(2);
-                    arrIni[15] = arrPreviousBalance[i][15];
-                    arrIni[16] = 'A';
-                    arrTransactions[cont] = arrIni;
-                    arrTransactions[cont][0] = 'SI' + arrTransactions[cont][0];
-                    
-                    var since = cont;
-
-                    cont++;
-
-                    var saldoFinalNumber = Number(arrPreviousBalance[i][13]) - Number(arrPreviousBalance[i][14]);
-                    if (saldoFinalNumber > 0) {
-                        sumColum13 = saldoFinalNumber;
-                        sumColum14 = 0;
-                    } else {
-                        sumColum13 = 0;
-                        sumColum14 = Number(saldoFinalNumber) * (-1);
-                    }
-
-                    var arrTemp = new Array();
-                    arrTemp[0] = 'SF' + arrTransactions[since][0].substring(2, arrTransactions[since][0].length);
-                    arrTemp[1] = arrTransactions[since][1];
-                    arrTemp[2] = '';
-                    arrTemp[3] = arrTransactions[since][3];
-                    arrTemp[4] = arrTransactions[since][4];
-                    arrTemp[5] = '00';
-                    arrTemp[6] = '';
-                    arrTemp[7] = '0';
-                    arrTemp[8] = periodEndDateTranform;
-                    arrTemp[9] = '';
-                    arrTemp[10] = periodEndDateTranform;
-                    arrTemp[11] = 'SALDO FINAL';
-                    arrTemp[12] = arrTransactions[since][12];
-                    arrTemp[13] = sumColum13.toFixed(2);
-                    arrTemp[14] = sumColum14.toFixed(2);
-                    arrTemp[15] = arrTransactions[since][15];
-                    arrTemp[16] = 'C';
-
-                    arrTransactions[cont] = arrTemp;
-                    
-                    cont++;
-                }
-            }
-            
-            return arrTransactions;
-
-        }
-
-        function transformDate(date) {
-            var parsedDateStringAsRawDateObject = format.parse({
-                value: date,
-                type: format.Type.DATE
-            });
-
-            var MM = parsedDateStringAsRawDateObject.getMonth() + 1;
-            var AAAA = parsedDateStringAsRawDateObject.getFullYear();
-            var DD = parsedDateStringAsRawDateObject.getDate();
-
-            if (('' + MM).length == 1) {
-                MM = '0' + MM;
-            }
-
-            if (('' + DD).length == 1) {
-                DD = '0' + DD;
-            }
-
-            return DD + '/' + MM + '/' + AAAA;
-        }
-
-        function NoData() {
-            if (arrPeriodSpecial.length > 0) {
-                periodName = specialName;
-            }
-
-            if (PARAMETERS.RECORDID != null) {
-                var recordLog = record.load({
-                    type: 'customrecord_lmry_pe_2016_rpt_genera_log',
-                    id: PARAMETERS.RECORDID
-                });
-            } else {
-                var recordLog = record.create({
-                    type: 'customrecord_lmry_pe_2016_rpt_genera_log'
-                });
-            }
-
-            MESSAGE = {
-                es: 'No existe informacion para los criterios seleccionados.',
-                en: 'There is no information for the selected criteria.',
-                pt: 'Não há informações para os critérios selecionados.'
-            }
-
-            recordLog.setValue({
-                fieldId: 'custrecord_lmry_pe_2016_rg_name',
-                value: MESSAGE[LANGUAGE]
-            });
-
-            //Periodo
-            recordLog.setValue({
-                fieldId: 'custrecord_lmry_pe_2016_rg_postingperiod',
-                value: periodName
-            });
-
-            var recordId = recordLog.save();
-        }
         function callSchedule() {
             var dataAditional = {
                 periodEndDate: periodEndDate,
@@ -3762,32 +2888,18 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
                 dataAditional: dataAditional
             }
             var params = {};
-            params['custscript_smc_pe_param_globales'] = param;
+            params['custscript_lmry_pe_param_globales'] = param;
             var RedirecSchdl = task.create({
                 taskType: task.TaskType.SCHEDULED_SCRIPT,
-                scriptId: 'customscript_smc_pe_cajabanco_efectuada',
-                deploymentId: 'customdeploy_smc_pe_cajabanco_efectuada',
+                scriptId: 'customscript_lmry_pe_cajabanco_efectuada',
+                deploymentId: 'customdeploy_lmry_pe_cajabanco_efectuada',
                 params: params
             });
             RedirecSchdl.submit();
 
 
         }
-
-        function recallMapReduce(){
-            var params = {};
-            log.debug("PARAMETERS.FILES [recallMapReduce]",PARAMETERS.FILES)
-            params['custscript_smc_pe_caj_banc_efec_file_mp']=PARAMETERS.FILES;
-            params['custscript_smc_pe_caj_banc_efec_lmit_mp']=PARAMETERS.LIMIT+range;
-            log.debug("params",params)
-            var RedirecMprd = task.create({
-                taskType: task.TaskType.MAP_REDUCE,
-                scriptId: 'customscript_smc_pe_cajabanco_efec_mprd',
-                deploymentId: 'customdeploy_smc_pe_cajabanco_efec_mprd',
-                params: params
-            });
-            RedirecMprd.submit();
-        }
+       
         function saveAuxiliarFile(strAuxiliar) {
             var folderId = objContext.getParameter({
                 name: 'custscript_lmry_pe_2016_rg_file_cabinet'
@@ -3812,19 +2924,6 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
 
                 var idFile = transactionsFile.save(); // Termina de grabar el archivo
                 log.debug("Name File - idFile:",fileName+" - "+idFile);
-                //log.debug("PARAMETERS.FILES [save Antes]",PARAMETERS.FILES)
-                // if (isRecall) {
-                //     if (PARAMETERS.FILES=='') {
-                //         log.debug("console","files vacio")
-                //         PARAMETERS.FILES=""+idFile;
-                //     }else{
-                //         log.debug("console","file lleno")
-                //         PARAMETERS.FILES+=","+idFile;
-                //     }                   
-                // }else{
-                //     PARAMETERS.FILES=PARAMETERS.FILES.split(",");
-                //     PARAMETERS.FILES.push(idFile);
-                // }
                 if (PARAMETERS.FILES == null) {
                     PARAMETERS.FILES = new Array();
                 }
@@ -3835,11 +2934,7 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
                 log.debug("WARNING MESSAGE", "No se encontró el folder del reporte.")
             }
         }
-        function lengthInUtf8Bytes(str) {
-            var m = encodeURIComponent(str).match(/%[89ABab]/g);
-            return str.length + (m ? m.length : 0);
-        }
-
+        
         function updateLogGenerator(name_carpeta) {
 
             var records = record.load({
