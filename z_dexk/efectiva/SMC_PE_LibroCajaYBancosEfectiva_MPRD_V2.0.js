@@ -263,7 +263,7 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
             // Parametros
 
             //paramperiodo
-            PARAMETERS.PERIOD = '128';
+            PARAMETERS.PERIOD = '130';
 
             //paramClosedPeriod
             PARAMETERS.CLOSED_PERIOD ='F';

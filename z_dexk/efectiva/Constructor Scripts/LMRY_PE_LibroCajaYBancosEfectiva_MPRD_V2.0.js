@@ -225,11 +225,14 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
                         var stringTemporal
                         stringTemporal = JSON.stringify(newArrTransactions);
                         saveAuxiliarFile(stringTemporal); 
-                    }                                                
+                    }
+                    callSchedule();
+                }else{
+                    NoData();
                 } 
                
                                  
-                callSchedule();
+                
                 
             } catch (err) {
 
@@ -2958,6 +2961,42 @@ define(["N/search", "N/task", "N/runtime", "N/file", "N/record", "N/format", "N/
 
             var recordId = records.save();
 
+        }
+
+        function NoData() {
+            if (arrPeriodSpecial.length > 0) {
+                periodName = specialName;
+            }
+
+            if (PARAMETERS.RECORDID != null) {
+                var recordLog = record.load({
+                    type: 'customrecord_lmry_pe_2016_rpt_genera_log',
+                    id: PARAMETERS.RECORDID
+                });
+            } else {
+                var recordLog = record.create({
+                    type: 'customrecord_lmry_pe_2016_rpt_genera_log'
+                });
+            }
+
+            MESSAGE = {
+                es: 'No existe informacion para los criterios seleccionados.',
+                en: 'There is no information for the selected criteria.',
+                pt: 'Não há informações para os critérios selecionados.'
+            }
+
+            recordLog.setValue({
+                fieldId: 'custrecord_lmry_pe_2016_rg_name',
+                value: MESSAGE[LANGUAGE]
+            });
+
+            //Periodo
+            recordLog.setValue({
+                fieldId: 'custrecord_lmry_pe_2016_rg_postingperiod',
+                value: periodName
+            });
+
+            var recordId = recordLog.save();
         }
         return {
             getInputData: getInputData,
