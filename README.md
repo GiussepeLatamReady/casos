@@ -1,6 +1,6 @@
 # Caja y Bancos efectiva 
 
-## error desconocido
+## error null name
 
 ## permiso
 h
