@@ -439,12 +439,6 @@ define(["N/record", "N/runtime", "N/file", "N/email", "N/search", "N/format", "N
                     value: 'TRUE'
                 });
                 savedSearch.settings.push(confiPeriodEnd);
-            } else {
-                var confiPeriodEnd = search.createSetting({
-                    name: 'includeperiodendtransactions',
-                    value: 'FALSE'
-                });
-                savedSearch.settings.push(confiPeriodEnd);
             }
 
             if (hasMultibookFeature) {
