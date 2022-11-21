@@ -35,5 +35,16 @@
 }
 
 
+{
+  PERIOD: "132",
+  CLOSED_PERIOD: "F",
+  SUBSID: "2",
+  MULTIBOOK: " ",
+  RECORDID: "1511",
+  TYPE_EXT_PERIOD: "1",
+  INDIC_OPERAC: "0"
+}
+
+
 
 

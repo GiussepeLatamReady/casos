@@ -96,7 +96,19 @@ define(["N/record", "N/runtime", "N/file", "N/search",
                         value: dataInput
                     });
                 } else {
-                    getParametersAndFeatures();
+                    //ParametersAndFeatures requeridos por el map
+                    //featuresubs 
+                    FEATURES.SUBSID = runtime.isFeatureInEffect({
+                        feature: "SUBSIDIARIES"
+                    });
+                    //feamultibook
+                    FEATURES.MULTIBOOK = runtime.isFeatureInEffect({
+                        feature: "MULTIBOOK"
+                    });
+                    //paramsubsidi
+                    PARAMETERS.SUBSID = objContext.getParameter({
+                        name: 'custscript_lmry_pe_caja_banco_cte_sub_mp'
+                    });
                     if (FEATURES.MULTIBOOK || FEATURES.MULTIBOOK == 'T') {
                         getVerifiedAccounts();
                     }
