@@ -45,6 +45,14 @@
   INDIC_OPERAC: "0"
 }
 
+CASE WHEN TO_NUMBER({customer.internalid
+})>0 THEN {customer.vatregnumber
+} ELSE CASE WHEN TO_NUMBER({vendor.internalid
+})>0 THEN {vendor.vatregnumber
+} ELSE CASE WHEN TO_NUMBER({employee.internalid
+})>0 THEN {employee.custentity_lmry_sv_taxpayer_number
+} ELSE 'Subsidiaria' END END END
+
 
 
 

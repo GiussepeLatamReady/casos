@@ -151,6 +151,9 @@ define(["N/record", "N/runtime", "N/file", "N/search",
           ArrCtaCte.push(transaction);
         }
         ArrCtaCte.sort(function(a,b){
+          return a[25]-b[25];
+        });
+        ArrCtaCte.sort(function(a,b){
           return a[1]-b[1];
         });
       });
@@ -279,14 +282,12 @@ define(["N/record", "N/runtime", "N/file", "N/search",
           var idTemporal='';
           for (var ii = 0; ii <= ArrCtaCte.length - 1; ii++) {
             if (_CtaCont == ArrCtaCte[ii][4]) {
-
               //- CTACONT
               strMovimiento += ArrCtaCte[ii][4] + '|';
               //0. PERIODO
               if (ArrCtaCte[ii][23] != null && ArrCtaCte[ii][23] != '' && ArrCtaCte[ii][23] != ' ') {
-
                 strMovimiento += ArrCtaCte[ii][23] + '|';
-
+                
               } else {
                 strMovimiento += _periodo + '|';
               }
@@ -764,7 +765,6 @@ define(["N/record", "N/runtime", "N/file", "N/search",
 
         for (var xi = 0; xi <= arrMovimiento.length - 2; xi++) {
           var arrLineaMov = arrMovimiento[xi].split('|');
-
           /*  if (arrMovimiento[xi][13]=='NaN'){
               arrMovimiento[xi][13]='0.00|';
             }*/
@@ -951,7 +951,6 @@ define(["N/record", "N/runtime", "N/file", "N/search",
 
         // Crea el archivo
         var File;
-
         File = fileModulo.create({
           name: NameFile,
           fileType: fileModulo.Type.PLAINTEXT,
