@@ -46,7 +46,7 @@ define(["N/record", "N/runtime", "N/file", "N/search",
     var antPeriodEndDate = null;
     //Nombre de libro contable
     var multibookName = '';
-    var ArrPlanCta = new Array(); 
+    var ArrPlanCta = new Array();
     var ArrCtaCte = new Array();
     var ArrSaldoInic = new Array();
     var ArrSaldoFinal = new Array();
@@ -78,7 +78,7 @@ define(["N/record", "N/runtime", "N/file", "N/search",
         } else {
           noData();
         }
-        
+
       } catch (error) {
 
         libreria.sendMail(LMRY_SCRIPT, ' [ execute] ' + error);
@@ -90,26 +90,26 @@ define(["N/record", "N/runtime", "N/file", "N/search",
     function getLibraryRPT() {
       try {
 
-          require(["/SuiteBundles/Bundle 37714/Latam_Library/LMRY_LibraryReport_LBRY_V2.js"], function(library) {
-              libraryRPT = library;
-          });
-          log.debug('libraryRPT', 'Bundle 37714');
+        require(["/SuiteBundles/Bundle 37714/Latam_Library/LMRY_LibraryReport_LBRY_V2.js"], function (library) {
+          libraryRPT = library;
+        });
+        log.debug('libraryRPT', 'Bundle 37714');
 
       } catch (err) {
 
-          try {
-              require(["/SuiteBundles/Bundle 35754/Latam_Library/LMRY_LibraryReport_LBRY_V2.js"], function(library) {
-                  libraryRPT = library;
-              });
+        try {
+          require(["/SuiteBundles/Bundle 35754/Latam_Library/LMRY_LibraryReport_LBRY_V2.js"], function (library) {
+            libraryRPT = library;
+          });
 
-              log.debug('libraryRPT', 'Bundle 35754');
-          } catch (err) {
+          log.debug('libraryRPT', 'Bundle 35754');
+        } catch (err) {
 
-              log.error('libraryRPT', 'No se encuentra libreria');
-          }
+          log.error('libraryRPT', 'No se encuentra libreria');
+        }
       }
 
-  }
+    }
 
     function getParametersAndFeatures() {
       var INFO = objContext.getParameter({
@@ -150,17 +150,17 @@ define(["N/record", "N/runtime", "N/file", "N/search",
         } else if (transaction[24] == 'MOV') {
           ArrCtaCte.push(transaction);
         }
-        ArrCtaCte.sort(function(a,b){
-          return a[25]-b[25];
+        ArrCtaCte.sort(function (a, b) {
+          return a[25] - b[25];
         });
-        ArrCtaCte.sort(function(a,b){
-          return a[1]-b[1];
+        ArrCtaCte.sort(function (a, b) {
+          return a[1] - b[1];
         });
       });
     }
 
     function ObtieneCajaBancoPC() {
-    
+
       var arrTemp = new Array();
       var savedsearch = search.load({
         //LatamReady PE 1.2Book cash and banks Current account Plan de Cuentas
@@ -231,10 +231,10 @@ define(["N/record", "N/runtime", "N/file", "N/search",
             arrTemp[6] = '';
 
           ArrPlanCta.push(arrTemp);
-          
+
         });
       });
-        
+
     }
 
     function GeneraMovimientos() {
@@ -271,15 +271,15 @@ define(["N/record", "N/runtime", "N/file", "N/search",
       var _periodo = AAAA + MM + '00';
       var _period = AAAA + MM;
 
-      
+
       var movimiento1 = '';
       var num2 = 0;
       for (var i = 0; i <= ArrPlanCta.length - 1; i++) {
-        log.debug("plan de cuentas",ArrPlanCta[i])
+        log.debug("plan de cuentas", ArrPlanCta[i])
         var _CtaCont = ArrPlanCta[i][0];
         if (ArrCtaCte.length > 0) {
-          var contNcorreltivo=0;
-          var idTemporal='';
+          var contNcorreltivo = 0;
+          var idTemporal = '';
           for (var ii = 0; ii <= ArrCtaCte.length - 1; ii++) {
             if (_CtaCont == ArrCtaCte[ii][4]) {
               //- CTACONT
@@ -287,7 +287,7 @@ define(["N/record", "N/runtime", "N/file", "N/search",
               //0. PERIODO
               if (ArrCtaCte[ii][23] != null && ArrCtaCte[ii][23] != '' && ArrCtaCte[ii][23] != ' ') {
                 strMovimiento += ArrCtaCte[ii][23] + '|';
-                
+
               } else {
                 strMovimiento += _periodo + '|';
               }
@@ -295,21 +295,21 @@ define(["N/record", "N/runtime", "N/file", "N/search",
               //1. CUO
               strMovimiento += RellenaTexto(ArrCtaCte[ii][1], 40, 'C') + '|';
               //2. NUMERO CORRELATIVO DE ASIENTO
-              var valorCorrelativo='';
+              var valorCorrelativo = '';
 
-              if(idTemporal==ArrCtaCte[ii][1]){
+              if (idTemporal == ArrCtaCte[ii][1]) {
                 contNcorreltivo++;
-                valorCorrelativo = "M" + completar_cero(9,contNcorreltivo);
+                valorCorrelativo = "M" + completar_cero(9, contNcorreltivo);
                 strMovimiento += RellenaTexto(valorCorrelativo, 10, 'C') + '|';
-                log.debug('strComprasNoDomi',strMovimiento);
-              }else{
-                contNcorreltivo=1;
-                valorCorrelativo = "M" + completar_cero(9,contNcorreltivo);
+                log.debug('strComprasNoDomi', strMovimiento);
+              } else {
+                contNcorreltivo = 1;
+                valorCorrelativo = "M" + completar_cero(9, contNcorreltivo);
                 strMovimiento += RellenaTexto(valorCorrelativo, 10, 'C') + '|';
-                log.debug('strComprasNoDomi',strMovimiento);
+                log.debug('strComprasNoDomi', strMovimiento);
               }
-              idTemporal=ArrCtaCte[ii][1];
-              
+              idTemporal = ArrCtaCte[ii][1];
+
               //3. CODIGO DE LA ENTIDAD FINANCIERA DONDE SE ENCUENTRA SU CUENTA BANCARIA
               strMovimiento += RellenaTexto(ArrCtaCte[ii][3], 2, 'N') + '|';
               //4. CODIGO DE LA CUENTA BANCARIA DEL CONTRIBUYENTE
@@ -390,7 +390,7 @@ define(["N/record", "N/runtime", "N/file", "N/search",
       }
 
     }
-       
+
     function GeneraSaldoInicial() {
       //strSaldoInicial = '';
       auxdia = '00';
@@ -495,7 +495,7 @@ define(["N/record", "N/runtime", "N/file", "N/search",
               xa++;
 
             }
-          } 
+          }
         } else if (ArrSaldoInic.length == 0 && ArrCtaCte.length != 0) //En caso no tenga saldos iniciales
         {
           var dd = true;
@@ -796,11 +796,11 @@ define(["N/record", "N/runtime", "N/file", "N/search",
 
       //Parambucle inicio
       var strReturn = '';
-      var i=0;
-      var inicio=0;
+      var i = 0;
+      var inicio = 0;
       //paramBucleFinTemp = paramBucleFin;
       var ArrTemp = strName.split('\r\n');
-      while(i<ArrTemp.length-1){
+      while (i < ArrTemp.length - 1) {
         var t = lengthInUtf8Bytes(strReturn);
         if (t <= file_size) {
           //strReturn += GenerarLinea(ArrTemp[i], periodYear, periodMonth, separador);
@@ -837,7 +837,7 @@ define(["N/record", "N/runtime", "N/file", "N/search",
             }
 
             inicio = i - cont;
-            i=inicio;
+            i = inicio;
           }
 
           strName = strReturn;
@@ -847,7 +847,7 @@ define(["N/record", "N/runtime", "N/file", "N/search",
 
         }
       }
-    
+
       strName = strReturn;
       //Parambucle Fin
 
@@ -892,17 +892,17 @@ define(["N/record", "N/runtime", "N/file", "N/search",
     function completar_cero(long, valor) {
       var length = ('' + valor).length;
       if (length <= long) {
-          if (long != length) {
-              for (var i = length; i < long; i++) {
-                  valor = '0' + valor;
-              }
-          } else {
-              return valor;
+        if (long != length) {
+          for (var i = length; i < long; i++) {
+            valor = '0' + valor;
           }
+        } else {
           return valor;
+        }
+        return valor;
       } else {
-          valor = ('' + valor).substring(0, long);
-          return valor;
+        valor = ('' + valor).substring(0, long);
+        return valor;
       }
     }
 
@@ -1068,7 +1068,7 @@ define(["N/record", "N/runtime", "N/file", "N/search",
           record.setFieldValue('custrecord_lmry_pe_2016_rg_transaction', namereport);
           */
 
-          if (FEATURES.MULTIBOOK|| FEATURES.MULTIBOOK == 'T') {
+          if (FEATURES.MULTIBOOK || FEATURES.MULTIBOOK == 'T') {
             record.setValue({
               fieldId: 'custrecord_lmry_pe_rg_multibook',
               value: multibookName
@@ -1083,7 +1083,7 @@ define(["N/record", "N/runtime", "N/file", "N/search",
           // Envia mail de conformidad al usuario
           //libreria.sendrptuser(namereport, 3, NameFile);
           libraryRPT.sendConfirmUserEmail('RPT - Libro de Caja y Bancos Cuenta Corriente', 3, NameFile, LANGUAGE);
-          
+
         }
       } else {
         // Debug
@@ -1234,7 +1234,7 @@ define(["N/record", "N/runtime", "N/file", "N/search",
 
       var recordId = records.save();
 
-  }
+    }
     return {
       execute: execute
     };
