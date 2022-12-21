@@ -11,9 +11,9 @@
  * @NScriptType MapReduceScript
  * @NModuleScope Public
  */
- define(['N/search', 'N/log', 'require', 'N/file', "N/config", 'N/runtime', 'N/query', "N/format", "N/record", "N/task", "./AR_LIBRARY_MENSUAL/AR_LIBRARY_MENSUAL_LBRY_V2.0.js"],
+ define(['N/search', 'N/log', 'N/file', "N/config", 'N/runtime', "N/format", "N/record"],
 
- function(search, log, require, fileModulo, config, runtime, query, format, recordModulo, task, libreria) {
+ function(search, log, fileModulo, config, runtime, format, recordModulo) {
 
      /**
       * Input Data for processing
@@ -76,7 +76,22 @@
      function getInputData() {
          try {
              ParametrosYFeatures();
-
+             log.debug("Parametros :",{
+                paramMultibook:paramMultibook,
+                paramRecordID:paramRecordID,
+                paramSubsidy:paramSubsidy,
+                paramPeriod:paramPeriod,
+                paramperiodinicio:paramperiodinicio,
+                paramperiodfinal:paramperiodfinal,
+                paramFeatureTax:paramFeatureTax,
+                paramLanguage:paramLanguage,
+             });
+             log.debug("features :",{
+                featuresubs:featuresubs,
+                feamultibook:feamultibook,
+                featJobs:featJobs,
+                featJobsAdvance:featJobsAdvance,
+             });
              ObtenerDatosSubsidiaria();
              ObtenerFiscalDocumentType();
              traerCamposDeBills();
@@ -87,11 +102,12 @@
              if (ArrData.length != 0) {
                  return ArrData;
              } else {
-                 NoData();
+                 //NoData();
+                 log.error("No data")
              }
          } catch (error) {
              log.error('getInputData error', error);
-             libreria.sendemailTranslate(LMRY_script, ' [ getInputData ] ' + error, paramLanguage);
+             //libreria.sendemailTranslate(LMRY_script, ' [ getInputData ] ' + error, paramLanguage);
          }
      }
 
@@ -546,7 +562,7 @@
              });
          } catch (error) {
              log.error('map error', error);
-             libreria.sendemailTranslate(LMRY_script, ' [ map ] ' + error, paramLanguage);
+             //libreria.sendemailTranslate(LMRY_script, ' [ map ] ' + error, paramLanguage);
          }
      }
 
@@ -744,11 +760,12 @@
              if (arrArciba.length != 0) {
                  savefile(text, contador_archivo);
              } else {
-                 NoData();
+                log.error ("no data")
+                 //NoData();
              }
          } catch (error) {
              log.error('summarize error', error);
-             libreria.sendemailTranslate(LMRY_script, ' [ summarize ] ' + error, paramLanguage);
+             //libreria.sendemailTranslate(LMRY_script, ' [ summarize ] ' + error, paramLanguage);
          }
      }
 
@@ -1681,8 +1698,150 @@
          var cont = 0;
          var infoTxt = '';
 
-         var savedSearch = search.load({
-             id: 'customsearch_lmry_ar_percep_done_ca_jobs'
+         var savedSearch = search.create({
+            type: "transaction",
+            filters:
+            [
+               ["type","anyof","CustInvc"], 
+               "AND", 
+               ["memorized","is","F"], 
+               "AND", 
+               ["formulanumeric: CASE WHEN {custbody_lmry_subsidiary_country} = 'Argentina' THEN 1 ELSE 0 END","equalto","1"], 
+               "AND", 
+               ["voided","is","F"], 
+               "AND", 
+               ["posting","is","T"], 
+               "AND", 
+               [[["formulanumeric: CASE WHEN {custcol_lmry_ar_item_tributo} = 'T' OR {custcol_lmry_ar_item_tributo} = 'Yes' THEN 1 ELSE 0 END","equalto","1"],"AND",["formulatext: {custcol_lmry_ar_col_jurisd_iibb.custrecord_lmry_ar_jurisdiccion_iibb_cod}","is","901"],"AND",["formulatext: {custcol_lmry_ar_perception_percentage}","isnotempty",""]],"OR",[["formulanumeric: CASE WHEN NVL({custcol_lmry_ar_item_tributo},'F') <>'T' AND NVL({custcol_lmry_ar_item_tributo},'F') <>'Yes' AND {taxline} <> 'T' AND {taxline} <> 'Yes' AND SUBSTR({taxitem},0,4)<>'PERC' AND SUBSTR({taxitem},0,4)<>'Perc' THEN 1 ELSE 0 END","equalto","1"]]]
+            ],
+            columns:
+            [
+               search.createColumn({
+                  name: "formulatext",
+                  summary: "GROUP",
+                  formula: "'2'",
+                  label: "0. Tipo Operacion"
+               }),
+               search.createColumn({
+                  name: "formulatext",
+                  summary: "MAX",
+                  formula: "{custcol_lmry_ar_norma_iibb_arciba.custrecord_lmry_ar_norma_code}",
+                  label: "Formula (Text)"
+               }),
+               search.createColumn({
+                  name: "formulatext",
+                  summary: "GROUP",
+                  formula: "TO_CHAR({trandate} , 'DD/MM/YYYY')",
+                  label: "2. Fecha Percepcion"
+               }),
+               search.createColumn({
+                  name: "formulatext",
+                  summary: "GROUP",
+                  formula: "{custbody_lmry_document_type.custrecord_lmry_codigo_doc_ar}  ",
+                  label: "3. Tipo de comprobante origen de la percepcion"
+               }),
+               search.createColumn({
+                  name: "formulatext",
+                  summary: "GROUP",
+                  formula: "{custbody_lmry_document_type.custrecord_lmry_letra_comprobante} ",
+                  label: "4. Letra del Comprobante"
+               }),
+               search.createColumn({
+                  name: "formulatext",
+                  summary: "GROUP",
+                  formula: "CONCAT(NVL({custbody_lmry_serie_doc_cxc},''),NVL({custbody_lmry_num_preimpreso},''))",
+                  label: "5. Nro de comprobante"
+               }),
+               search.createColumn({
+                  name: "formulatext",
+                  summary: "GROUP",
+                  formula: "TO_CHAR({trandate},'dd/mm/yyyy')",
+                  label: "6. Fecha del comprobante "
+               }),
+               search.createColumn({
+                  name: "formulacurrency",
+                  summary: "SUM",
+                  formula: "ABS(CASE WHEN {taxitem}<>'E-AR' AND NVL({custcol_lmry_ar_item_tributo},'F')<>'T' AND NVL({custcol_lmry_ar_item_tributo},'F')<>'Yes' AND {taxitem}<>'UNDEF_AR' AND {taxitem}<>'undef_ar' AND {taxitem}<>'UNDEF-AR' AND {taxitem}<>'undef-ar' AND {taxitem}<>'ENop-AR' AND {taxitem}<>'IZ-AR' AND SUBSTR({taxitem},0,4)<>'PERC' AND SUBSTR({taxitem},0,4)<>'Perc' THEN ABS(NVL({debitamount},0) - NVL({creditamount},0)) + ABS({taxamount}) ELSE 0 END)",
+                  label: "Formula (Currency)"
+               }),
+               search.createColumn({
+                  name: "formulatext",
+                  summary: "GROUP",
+                  formula: "case when {customer.custentity_lmry_sunat_tipo_doc_cod} = '80' then '3' WHEN {customer.custentity_lmry_sunat_tipo_doc_cod} = '86' THEN '2' WHEN {customer.custentity_lmry_sunat_tipo_doc_cod} = '87' THEN '1' ELSE '' END",
+                  label: "9. Tipo de documento del Retenido"
+               }),
+               search.createColumn({
+                  name: "formulatext",
+                  summary: "GROUP",
+                  formula: "CONCAT({customer.vatregnumber},{customer.custentity_lmry_digito_verificator})",
+                  label: "10. Nro de documento del Retenido"
+               }),
+               search.createColumn({
+                  name: "formulatext",
+                  summary: "GROUP",
+                  formula: "{customer.custentity_lmry_ar_cod_situaci_ib_arciba}",
+                  label: "11.Situación IB del Retenido"
+               }),
+               search.createColumn({
+                  name: "formulatext",
+                  summary: "GROUP",
+                  formula: " case when {customer.custentity_lmry_ar_cod_situaci_ib_arciba} = '4' then '00000000000' WHEN ({customer.custentity_lmry_ar_cod_situaci_ib_arciba} = '1' or {customer.custentity_lmry_ar_cod_situaci_ib_arciba} = '5') THEN NVL({customer.custentity_lmry_ar_num_inscripcion_sf},'') WHEN {customer.custentity_lmry_ar_cod_situaci_ib_arciba} = '2' THEN NVL({customer.custentity_lmry_ar_num_inscripcion_cm},'')  ELSE '' END",
+                  label: "12. Nro Inscripción IB del Retenido"
+               }),
+               search.createColumn({
+                  name: "formulatext",
+                  summary: "GROUP",
+                  formula: "{customer.custentity_lmry_ar_cod_situac_iva_arciba}",
+                  label: "13. Situación frente al IVA del Retenido"
+               }),
+               search.createColumn({
+                  name: "formulatext",
+                  summary: "GROUP",
+                  formula: "case when {customer.isperson} = 'T' THEN CONCAT({customer.firstname}, CONCAT(' ', {customer.lastname})) else {customer.companyname} end",
+                  label: "14. Razón Social del Retenido"
+               }),
+               search.createColumn({
+                  name: "formulacurrency",
+                  summary: "GROUP",
+                  formula: "0",
+                  label: "15.Importe otros conceptos"
+               }),
+               search.createColumn({
+                  name: "formulacurrency",
+                  summary: "SUM",
+                  formula: "ABS(CASE WHEN {taxitem}<>'E-AR' AND NVL({custcol_lmry_ar_item_tributo},'F') <>'T' AND NVL({custcol_lmry_ar_item_tributo},'F') <>'Yes' AND {taxitem}<>'UNDEF_AR' AND {taxitem}<>'undef_ar' AND {taxitem}<>'UNDEF-AR' AND {taxitem}<>'undef-ar' AND {taxitem}<>'ENop-AR' AND {taxitem}<>'IZ-AR' AND SUBSTR({taxitem},0,4)<>'PERC' AND SUBSTR({taxitem},0,4)<>'Perc' THEN ABS({taxamount}) ELSE 0 END)",
+                  label: "Formula (Currency)"
+               }),
+               search.createColumn({
+                  name: "formulacurrency",
+                  summary: "SUM",
+                  formula: "CASE WHEN {custcol_lmry_ar_perception_type} = 'Ingresos Brutos' AND (NVL({custcol_lmry_ar_item_tributo},'F') = 'T' OR NVL({custcol_lmry_ar_item_tributo},'F') = 'Yes') AND {custcol_lmry_ar_col_jurisd_iibb}='Capital Federal' AND ({taxitem} = 'UNDEF_AR' OR {taxitem} = 'undef_ar' OR {taxitem} = 'UNDEF-AR' OR  {taxitem} = 'undef-ar') THEN ABS({custcol_lmry_base_amount}) END",
+                  label: "Formula (Currency)"
+               }),
+               search.createColumn({
+                  name: "formulanumeric",
+                  summary: "SUM",
+                  formula: "{custcol_lmry_ar_perception_percentage} * 10000",
+                  label: "Formula (Numeric)"
+               }),
+               search.createColumn({
+                  name: "formulacurrency",
+                  summary: "SUM",
+                  formula: "CASE WHEN {custcol_lmry_ar_perception_type}='Ingresos Brutos' AND {custcol_lmry_ar_col_jurisd_iibb}='Capital Federal' AND ({taxitem} = 'UNDEF_AR' OR {taxitem} = 'undef_ar' OR {taxitem} = 'UNDEF-AR' OR  {taxitem} = 'undef-ar') THEN ABS({amount}) END",
+                  label: "Formula (Currency)"
+               }),
+               search.createColumn({
+                  name: "formulacurrency",
+                  summary: "SUM",
+                  formula: "CASE WHEN {custcol_lmry_ar_perception_type}='Ingresos Brutos' AND {custcol_lmry_ar_col_jurisd_iibb}='Capital Federal' AND ({taxitem} = 'UNDEF_AR' OR {taxitem} = 'undef_ar' OR {taxitem} = 'UNDEF-AR' OR  {taxitem} = 'undef-ar') THEN ABS({amount}) END",
+                  label: "Formula (Currency)"
+               }),
+               search.createColumn({
+                  name: "exchangerate",
+                  summary: "GROUP",
+                  label: "Exchange Rate"
+               })
+            ]
          });
 
          if (featuresubs) {
@@ -1835,6 +1994,10 @@
          });
          savedSearch.columns.push(columna28);
 
+        //  var pruebaTest = search.createColumn({name: "internalid",summary: "GROUP", label: "0. Internal ID"});
+
+        //  savedSearch.columns.push(pruebaTest);
+
          var searchresult = savedSearch.run();
          var Data = '';
          while (!DbolStop) {
@@ -1854,6 +2017,7 @@
                      var arr = new Array();
 
                      if (objResult[i].getValue(columns[7]) != 0 && objResult[i].getValue(columns[16]) != 0) {
+                         log.debug("Result Percepcion",objResult[i]);
                          //0. TIPO DE OPERACION
                          var Data0 = objResult[i].getValue(columns[0]);
 
@@ -2180,7 +2344,7 @@
 
              filetext = '.txt';
 
-             NameFile = Name_File(contador_archivo) + filetext;
+             NameFile = 'SMC_'+Name_File(contador_archivo) + filetext;
              // Crea el archivo.xls
              var file = fileModulo.create({
                  name: NameFile,
@@ -2207,76 +2371,77 @@
              }
 
              urlfile += idfile2.url;
+             log.debug("URL:",urlfile)
+            //  if (idfile) {
+            //      var usuarioTemp = runtime.getCurrentUser();
+            //      var id = usuarioTemp.id;
+            //      var employeename = search.lookupFields({
+            //          type: search.Type.EMPLOYEE,
+            //          id: id,
+            //          columns: ['firstname', 'lastname']
+            //      });
+            //      var usuario = employeename.firstname + ' ' + employeename.lastname;
+            //      if(contador_archivo != 0){
+            //          var record = recordModulo.create({
+            //              type: 'customrecord_lmry_ar_rpt_generator_log'
+            //          });
+            //      }else{
+            //          var record = recordModulo.load({
+            //              type: 'customrecord_lmry_ar_rpt_generator_log',
+            //              id: paramRecordID
+            //          });
+            //      }
 
-             if (idfile) {
-                 var usuarioTemp = runtime.getCurrentUser();
-                 var id = usuarioTemp.id;
-                 var employeename = search.lookupFields({
-                     type: search.Type.EMPLOYEE,
-                     id: id,
-                     columns: ['firstname', 'lastname']
-                 });
-                 var usuario = employeename.firstname + ' ' + employeename.lastname;
-                 if(contador_archivo != 0){
-                     var record = recordModulo.create({
-                         type: 'customrecord_lmry_ar_rpt_generator_log'
-                     });
-                 }else{
-                     var record = recordModulo.load({
-                         type: 'customrecord_lmry_ar_rpt_generator_log',
-                         id: paramRecordID
-                     });
-                 }
+            //      //Nombre del Archivos
+            //      record.setValue({
+            //          fieldId: 'custrecord_lmry_ar_rg_name',
+            //          value: NameFile
+            //      });
 
-                 //Nombre del Archivos
-                 record.setValue({
-                     fieldId: 'custrecord_lmry_ar_rg_name',
-                     value: NameFile
-                 });
+            //      //URL del archivo
+            //      record.setValue({
+            //          fieldId: 'custrecord_lmry_ar_rg_url_file',
+            //          value: urlfile
+            //      });
 
-                 //URL del archivo
-                 record.setValue({
-                     fieldId: 'custrecord_lmry_ar_rg_url_file',
-                     value: urlfile
-                 });
+            //      //Nombre del Reporte
+            //      record.setValue({
+            //          fieldId: 'custrecord_lmry_ar_rg_transaction',
+            //          value: nameReport
+            //      });
 
-                 //Nombre del Reporte
-                 record.setValue({
-                     fieldId: 'custrecord_lmry_ar_rg_transaction',
-                     value: nameReport
-                 });
+            //      //Subsidiaria
+            //      record.setValue({
+            //          fieldId: 'custrecord_lmry_ar_rg_subsidiary',
+            //          value: companyname
+            //      });
 
-                 //Subsidiaria
-                 record.setValue({
-                     fieldId: 'custrecord_lmry_ar_rg_subsidiary',
-                     value: companyname
-                 });
+            //      //Periodo
+            //      record.setValue({
+            //          fieldId: 'custrecord_lmry_ar_rg_postingperiod',
+            //          value: periodname
+            //      });
 
-                 //Periodo
-                 record.setValue({
-                     fieldId: 'custrecord_lmry_ar_rg_postingperiod',
-                     value: periodname
-                 });
+            //      //Multibook
+            //      if (feamultibook || feamultibook == 'T') {
+            //          record.setValue({
+            //              fieldId: 'custrecord_lmry_ar_rg_multibook',
+            //              value: multibookName
+            //          });
+            //      }
 
-                 //Multibook
-                 if (feamultibook || feamultibook == 'T') {
-                     record.setValue({
-                         fieldId: 'custrecord_lmry_ar_rg_multibook',
-                         value: multibookName
-                     });
-                 }
+            //      //Creado por
+            //      record.setValue({
+            //          fieldId: 'custrecord_lmry_ar_rg_employee',
+            //          value: usuario
+            //      });
+            //      var recordId = record.save();
 
-                 //Creado por
-                 record.setValue({
-                     fieldId: 'custrecord_lmry_ar_rg_employee',
-                     value: usuario
-                 });
-                 var recordId = record.save();
-
-                 //Envia mail de conformidad al usuario
-                 log.error('NameFile', NameFile);
-                 libreria.sendrptuser(nameReport, 3, NameFile);
-             }
+            //      //Envia mail de conformidad al usuario
+            //      log.error('NameFile', NameFile);
+            //      libreria.sendrptuser(nameReport, 3, NameFile);
+            //  }
+             log.error('NameFile', NameFile);
          }
      }
 
@@ -2461,7 +2626,8 @@
              }
 
          } catch (error) {
-             libreria.sendemailTranslate(LMRY_script, '[ObtainNameSubsidiaria]' + error, paramLanguage);
+            log.error("[ObtainNameSubsidiaria]",error);
+             //libreria.sendemailTranslate(LMRY_script, '[ObtainNameSubsidiaria]' + error, paramLanguage);
          }
          return '';
      }
@@ -2477,55 +2643,30 @@
                  return federalId.taxidnum;
              }
          } catch (error) {
-             libreria.sendemailTranslate(LMRY_script, '[ObtainFederalIdSubsidiaria]' + error, paramLanguage);
+            log.error("[ObtainFederalIdSubsidiaria]",error);
+            //libreria.sendemailTranslate(LMRY_script, '[ObtainFederalIdSubsidiaria]' + error, paramLanguage);
          }
          return '';
      }
 
      function ParametrosYFeatures() {
 
-         paramMultibook = objContext.getParameter({
-             name: 'custscript_lmry_ar_multi_arciba_efect_mr'
-         });
+         paramMultibook = ' ';
 
-         paramRecordID = objContext.getParameter({
-             name: 'custscript_lmry_ar_recid_arciba_efect_mr'
-         });
+         paramRecordID = ' ';
 
-         paramSubsidy = objContext.getParameter({
-             name: 'custscript_lmry_ar_subsi_arciba_efect_mr'
-         });
+         paramSubsidy = '9';
 
-         paramPeriod = objContext.getParameter({
-             name: 'custscript_lmry_ar_perio_arciba_efect_mr'
-         });
+         paramPeriod = '134';
 
-         paramperiodinicio = objContext.getParameter({
-             name: 'custscript_lmry_ar_perin_arciba_efect_mr'
-         });
+         paramperiodinicio = null
 
-         paramperiodfinal = objContext.getParameter({
-             name: 'custscript_lmry_ar_perfn_arciba_efect_mr'
-         });
+         paramperiodfinal = null
 
-         paramFeatureTax = objContext.getParameter({
-             name: 'custscript_lmry_ar_feaid_arciba_efect_mr'
-         });
+         paramFeatureTax = '29';
 
-         paramLanguage = objContext.getParameter({
-             name: 'custscript_lmry_ar_lang_arciba_efect_mr'
-         });
+         paramLanguage = 'en';
 
-         log.debug("Parametros :",{
-            paramMultibook:paramMultibook,
-            paramRecordID:paramRecordID,
-            paramSubsidy:paramSubsidy,
-            paramPeriod:paramPeriod,
-            paramperiodinicio:paramperiodinicio,
-            paramperiodfinal:paramperiodfinal,
-            paramFeatureTax:paramFeatureTax,
-            paramLanguage:paramLanguage,
-         });
          if (paramFeatureTax != '' || paramFeatureTax != null) {
              ObtenerTaxes();
          }
@@ -2568,6 +2709,7 @@
              feature: "ADVANCEDJOBS"
          });
 
+         
          //obtener el nombre del MULTIBOOK
          if (feamultibook) {
              var multibookName_temp = search.lookupFields({
