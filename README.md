@@ -20,7 +20,7 @@ solo obs:
 LatamReady - CR Structure and Destination of Sales
 customsearch_lmry_cr_esdest_s1
 
-Latam - Tariff Code
+Latam col - Tariff Code
 {custcol_lmry_tariff_code}
 
 invoice:
