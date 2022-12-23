@@ -1,18 +1,33 @@
-# 1518 :El reporte ARCIBA Percepciones Efectuadas IIBB CABA no está trayendo en el txt los importes correspondientes a las percepciones de las Notas de Crédito
-  [https://docs.google.com/document/d/1uFxwdNoFw-lA3AyrBuDpRSCTQFLNnAIg7nJfsB1QGQY/edit]
-## error null name
+# 1532 : RPT - CR Estructura y Destino de las Ventas no sale informacion
+  [https://docs.google.com/document/d/11IfwECQySa2RxRgYSZXHu32V1-zCZ9SUSuNhqTZJx20/edit]
 
-## permiso
-h
 
-## Name Script
-Name: LatamReady - AR ARCIBA Efect. MPRD 2.0
-id: customscript_lmry_ar_arcibav3_retpe_mprd
-File: LMRY_AR_ARCIBA_PER_RET_EFECT_IIBBv3_MPRD_v2.0.js
+ 
+## change Script
+Name: LatamReady - CR Estruc Ventas MPRD V2.0
+id: customscript_lmry_cr_esdest_vent_mprd
+File: LMRY_CR_EstrucyDest_Ventas_MPRD_V2.0.js 
+## change search
+Name: LatamReady - CR Sales to Free Zone Companies
+id: customsearch_lmry_cr_esdest_s2
 
-## Espejo
+De customermain. a customer.
 
-Name: SMC - AR ARCIBA Efect. MPRD 2.0
-id: customscript_smc_ar_arcibav3_retpe_mprd
-File: SMC_AR_ARCIBA_PER_RET_EFECT_IIBBv3_MPRD_v2.0.js
+
+
+## change id
+solo obs:
+LatamReady - CR Structure and Destination of Sales
+customsearch_lmry_cr_esdest_s1
+
+Latam - Tariff Code
+{custcol_lmry_tariff_code}
+
+invoice:
+[https://tstdrv1774174.app.netsuite.com/app/accounting/transactions/custinvc.nl?id=3512676&whence=]
+## Script mirror
+
+Name: SMC - CR Estruc Ventas MPRD V2.0
+id: customscript_smc_cr_esdest_vent_mprd
+File: SMC_CR_EstrucyDest_Ventas_MPRD_V2.0.js 
 
