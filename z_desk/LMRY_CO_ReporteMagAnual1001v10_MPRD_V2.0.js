@@ -922,7 +922,7 @@ define(['N/record', 'N/runtime', 'N/file', 'N/search', 'N/encode',
                     auxArray[0] = objResult[0].getValue(columns[0]);
 
                     // 1. NIT
-                    auxArray[1] = QuitarCaracteres(objResult[0].getValue(columns[1]));
+                    auxArray[1] = objResult[0].getValue(columns[1]);
 
                     // 2. Apellido Paterno
                     if (objResult[0].getValue(columns[2]).split(' ')[0]) {
@@ -1051,7 +1051,7 @@ define(['N/record', 'N/runtime', 'N/file', 'N/search', 'N/encode',
                     auxArray[0] = objResult[0].getValue(columns[0]);
 
                     // 1. NIT
-                    auxArray[1] = QuitarCaracteres(objResult[0].getValue(columns[1]));
+                    auxArray[1] = objResult[0].getValue(columns[1]);
 
                     // 2. Apellido Paterno
                     if (objResult[0].getValue(columns[2]).split(' ')[0]) {
@@ -1698,17 +1698,6 @@ define(['N/record', 'N/runtime', 'N/file', 'N/search', 'N/encode',
             return [addressSubsidiary, provId, cityId, countryId];
         }
 
-
-        function QuitarCaracteres(str) {
-
-            var nit = '';
-            for (var i = 0; i < str.length; i++) {
-                if (isInteger(Number(str[i])) && str[i] != ' ') {
-                    nit += str[i];
-                }
-            }
-            return nit;
-        }
 
         function isInteger(numero) {
             if (numero % 1 == 0) {
