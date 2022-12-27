@@ -6,7 +6,9 @@ function QuitarCaracteres(str) {
   //         nit += str[i];
   //     }
   // }
-  str=str.replace(/[,-\s]/g,"");
+  str=str.replace(/,/g,"");
+  str=str.replace(/-/g,"");
+  str=str.replace(/\s/g,"");
   
   return str;
 }

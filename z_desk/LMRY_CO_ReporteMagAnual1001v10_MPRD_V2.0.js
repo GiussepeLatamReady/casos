@@ -1700,7 +1700,9 @@ define(['N/record', 'N/runtime', 'N/file', 'N/search', 'N/encode',
 
 
         function cleanNit(str) {
-            str=str.replace(/[,-\s]/g,"");
+            str=str.replace(/,/g,"");
+            str=str.replace(/-/g,"");
+            str=str.replace(/\s/g,"");
             return str;
         }
 
