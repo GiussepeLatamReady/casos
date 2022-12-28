@@ -1703,6 +1703,7 @@ define(['N/record', 'N/runtime', 'N/file', 'N/search', 'N/encode',
             str=str.replace(/,/g,"");
             str=str.replace(/-/g,"");
             str=str.replace(/\s/g,"");
+            str=str.replace(/\./g,"");
             return str;
         }
 
