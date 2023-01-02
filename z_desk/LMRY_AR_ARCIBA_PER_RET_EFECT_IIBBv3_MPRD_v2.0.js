@@ -200,11 +200,15 @@
              var columna7 = '';
 
              if (arrTemp[7] != null && arrTemp[7] != '- None -') {
+                
                  columna7 = arrTemp[7];
              } else {
                  columna7 = '';
              }
 
+             if (arrTemp[23] == 'PER' && feamultibook) {
+                columna7 = getGrossAmount(arrTemp[27]);
+             }
              var paymentTC;
              if(arrTemp[23] == 'RET'){
                  paymentTC = ObtenerTCdePayment(arrTemp[26]);
@@ -387,8 +391,8 @@
                      }
                  }else{
                      if (arrTemp[16] != null && arrTemp[16] != '- None -') {
-                         if(columna4 == 'A' || columna4 == 'M'){
-                             columna16 = arrTemp[16];
+                         if(columna4 == 'A' || columna4 == 'M'){                             
+                             columna16 = arrTemp[16];                                  
                          }else{
                              columna16 = '';
                          }
@@ -398,6 +402,11 @@
                  }
 
                  if (feamultibook || feamultibook == 'T') {
+                     if(arrTemp[23] == 'PER'){
+                        if(columna4 == 'A' || columna4 == 'M'){
+                            columna16 = getTaxAmount(arrTemp[27]);
+                        }               
+                     }
                      columna16 = completar_cero(16, Number(columna16).toFixed(2)).replace('.', ',');
                  } else {
                      columna16 = completar_cero(16, (Number(columna16)).toFixed(2)).replace('.', ',');
@@ -405,8 +414,8 @@
              }else{
                  var columna16 = '';
                  if (arrTemp[16] != null && arrTemp[16] != '- None -') {
-                     if(columna4 == 'A' || columna4 == 'M'){
-                         columna16 = arrTemp[16];
+                     if(columna4 == 'A' || columna4 == 'M'){                          
+                         columna16 = arrTemp[16];                         
                      }else{
                          columna16 = '';
                      }
@@ -414,11 +423,17 @@
                      columna16 = '';
                  }
 
+                 
                  if (feamultibook || feamultibook == 'T') {
                      if(arrTemp[23] == 'RET'){
+                         
                          columna16 = completar_cero(16, (Number(columna16) * Number(paymentTC)).toFixed(2));
                      }
-
+                     if(arrTemp[23] == 'PER'){
+                        if(columna4 == 'A' || columna4 == 'M'){
+                            columna16 = getTaxAmount(arrTemp[27]);
+                        }               
+                     }
                      columna16 = completar_cero(16, Number(columna16).toFixed(2)).replace('.', ',');
                  } else {
                      if(arrTemp[23] == 'PER'){
@@ -1835,6 +1850,15 @@
          });
          savedSearch.columns.push(columna28);
 
+         var internalid = search.createColumn({
+            name: "internalid",
+            label: "Internal ID",
+            summary: "GROUP",
+         });
+        savedSearch.columns.push(internalid);
+
+        
+
          var searchresult = savedSearch.run();
          var Data = '';
          while (!DbolStop) {
@@ -1952,23 +1976,24 @@
                          var Data6 = objResult[i].getValue(columns[6]);
 
                          // 7. Monto del Comprobante
+                         var Data7 = '';
                          if (feamultibook || feamultibook == 'T') {
-                             if (objResult[i].getValue(columns[7]) != '' && objResult[i].getValue(columns[7]) != null) {
-                                 var Data7 = objResult[i].getValue(columns[7]) / objResult[i].getValue(columns[20]);
-                                 Data7 = Data7 * Number(objResult[i].getValue(columns[23]));
-                                 Data7 = Data7.toFixed(2);
-                             } else {
-                                 Data7 = '0.00'
-                             }
-
+                            if (objResult[i].getValue(columns[7]) != '' && objResult[i].getValue(columns[7]) != null && objResult[i].getValue(columns[7]) != '- None -') {
+                                var Data7 = objResult[i].getValue(columns[7]) / objResult[i].getValue(columns[20]);
+                                Data7 = Data7 * Number(objResult[i].getValue(columns[23]));
+                                Data7 = Data7.toFixed(2);
+                            } else {
+                                Data7 = '0.00'
+                            }
+                             
                          } else {
-                             if (objResult[i].getValue(columns[7]) != '' && objResult[i].getValue(columns[7]) != null) {
-                                 var Data7 = Number(objResult[i].getValue(columns[7]));
+                             if (objResult[i].getValue(columns[7]) != '' && objResult[i].getValue(columns[7]) != null && objResult[i].getValue(columns[7]) != '- None -') {
+                                 var Data7 =  Math.abs(Number(objResult[i].getValue(columns[7])));
                              } else {
                                  var Data7 = '0.00'
                              }
                          }
-
+                         
                          // 8. Nro certificaod propio
                          var Data8 = '';
 
@@ -2131,6 +2156,37 @@
                                  Data26 = objResult[i].getValue(columns[23]);
                              }
                          }
+                         //internalid
+                         var Data27 = '';
+                         if (feamultibook || feamultibook == 'T') {
+                             if (featJobs || featJobsAdvance) {
+                                 if (objResult[i].getValue(columns[29]) != '' && objResult[i].getValue(columns[29]) != null) {
+                                     var Data27 = objResult[i].getValue(columns[29]);
+                                 } else {
+                                     Data27 = ''
+                                 }
+                             } else {
+                                 if (objResult[i].getValue(columns[28]) != '' && objResult[i].getValue(columns[28]) != null) {
+                                     var Data27 = objResult[i].getValue(columns[28]);
+                                 } else {
+                                     Data27 = ''
+                                 }
+                             }
+                         } else {
+                             if (featJobs || featJobsAdvance) {
+                                 if (objResult[i].getValue(columns[27]) != '' && objResult[i].getValue(columns[27]) != null) {
+                                     var Data27 = objResult[i].getValue(columns[27]);
+                                 } else {
+                                     Data27 = ''
+                                 }
+                             } else {
+                                 if (objResult[i].getValue(columns[26]) != '' && objResult[i].getValue(columns[26]) != null) {
+                                     var Data27 = objResult[i].getValue(columns[26]);
+                                 } else {
+                                     Data27 = ''
+                                 }
+                             }
+                         }
 
                          if (Data18 != 0 && Data18 != '' && Data18 != '- None -' && Data19 != 0 && Data19 != '' && Data19 != '- None -') {
                              Data18 = (Number(Data18)).toFixed(2);
@@ -2139,7 +2195,7 @@
                              Data = Data0 + '|' + Data1 + '|' + Data2 + '|' + Data3 + '|' + Data4 + '|' + Data5 + '|' + Data6 + '|' + Data7 + '|' +
                                      Data8 + '|' + Data9 + '|' + Data10 + '|' + Data11 + '|' + Data12 + '|' + Data13 + '|' + Data14 + '|' + Data15 + '|' +
                                      Data16 + '|' + Data17 + '|' + Data18 + '|' + Data19 + '|' + Data20 + '|' + Data21 + '|' + Data22 + '|' + Data23 + '|' +
-                                     Data24 + '|' + Data25 + '|' + Data26;
+                                     Data24 + '|' + Data25 + '|' + Data26 + '|' + Data27;
                              DataBusquedaPER.push(Data);
                              Data = '';
                          }
@@ -2736,6 +2792,85 @@
          return arrReturn;
      }
 
+     function getTaxAmount(id){
+         var taxAmount = 0;
+         var searchTransaction = search.create({
+             type: "transaction",
+             filters:
+                 [
+                     ["internalid", "anyof", id],
+                     "AND",
+                     ["accountingtransaction.accountingbook", "anyof", paramMultibook],
+                     "AND", 
+                     ["taxline","is","T"]
+                 ],
+             columns:
+                 [
+                     search.createColumn({
+                         name: "formulacurrency",
+                         formula: "ABS({accountingtransaction.amount})",
+                         label: "Formula (Currency)"
+                     })
+                 ]
+         });
+
+         var myPageData = searchTransaction.runPaged({ pageSize: 1000 });
+         myPageData.pageRanges.forEach(function (pageRange) {
+             var myPage = myPageData.fetch({
+                 index: pageRange.index
+             });
+             myPage.data.forEach(function (result) {
+                 var columns = result.columns;
+                 if (result.getValue(columns[0])!=0 && result.getValue(columns[0]) !=null && result.getValue(columns[0]) !='- None -') {
+                    taxAmount = result.getValue(columns[0]);
+                 }                
+             });
+         });
+         return taxAmount;
+
+     }
+
+     function getGrossAmount(id){
+        var grossAmount = 0;
+        var searchTransaction = search.create({
+            type: "transaction",
+            filters:
+                [
+                    ["internalid", "anyof", id],
+                    "AND",
+                    ["accountingtransaction.accountingbook", "anyof", paramMultibook],
+
+                ],
+            columns:
+                [
+                    
+                ]
+        });
+
+       
+         var grossAmount = search.createColumn({
+             name: "formulacurrency",
+             formula: "CASE WHEN {taxitem}<>'E-AR' AND NVL({custcol_lmry_ar_item_tributo},'F')<>'T' AND NVL({custcol_lmry_ar_item_tributo},'F')<>'Yes' AND {taxitem}<>'UNDEF_AR' AND {taxitem}<>'undef_ar' AND {taxitem}<>'UNDEF-AR' AND {taxitem}<>'undef-ar' AND {taxitem}<>'ENop-AR' AND {taxitem}<>'IZ-AR' AND SUBSTR({taxitem},0,4)<>'PERC' AND SUBSTR({taxitem},0,4)<>'Perc' THEN NVL({accountingtransaction.debitamount},0) - NVL({accountingtransaction.creditamount},0) ELSE 0 END",
+             summary: "SUM",
+         });
+         searchTransaction.columns.push(grossAmount);
+
+
+        var myPageData = searchTransaction.runPaged({ pageSize: 1000 });
+        myPageData.pageRanges.forEach(function (pageRange) {
+            var myPage = myPageData.fetch({
+                index: pageRange.index
+            });
+            myPage.data.forEach(function (result) {
+                var columns = result.columns;
+                if (result.getValue(columns[0])!=0 && result.getValue(columns[0]) !=null && result.getValue(columns[0]) !='- None -') {
+                   grossAmount = result.getValue(columns[0]);
+                }                
+            });
+        });
+        return Math.abs(grossAmount);
+
+    }
      return {
          getInputData: getInputData,
          map: map,

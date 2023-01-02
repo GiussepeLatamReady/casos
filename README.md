@@ -16,3 +16,9 @@ Name: SMC - AR ARCIBA Efect. MPRD 2.0
 id: customscript_smc_ar_arcibav3_retpe_mprd
 File: SMC_AR_ARCIBA_PER_RET_EFECT_IIBBv3_MPRD_v2.0.js
 
+## change search 
+
+quitarle el valor absoluto
+Name: LatamReady AR - Perception Done IIBB CABA Without Jobs
+id: customsearch_lmry_ar_percep_done_ca_jobsluto al monto de comprobante
+
