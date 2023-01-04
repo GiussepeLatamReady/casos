@@ -2811,7 +2811,12 @@
                          formula: "ABS({accountingtransaction.amount})",
                          label: "Formula (Currency)"
                      })
-                 ]
+                 ],
+             settings: [
+                 search.createSetting({
+                     name: 'consolidationtype',
+                     value: 'NONE'
+                 })]
          });
 
          var myPageData = searchTransaction.runPaged({ pageSize: 1000 });
@@ -2844,7 +2849,12 @@
             columns:
                 [
                     
-                ]
+                ],
+            settings: [
+                search.createSetting({
+                    name: 'consolidationtype',
+                    value: 'NONE'
+                })]
         });
 
        
