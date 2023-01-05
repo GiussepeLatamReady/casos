@@ -1572,6 +1572,9 @@ define(["N/record", "N/runtime", "N/file", "N/email", "N/search", "N/format",
                 C110 += arrTransaction[i][0].substring(arrTransaction[i][0].length - 6, arrTransaction[i][0].length) + '|';
                 //2.TXT_COMPL
                 auxiliar = String(arrTransaction[i][70]).substring(0, 250);
+                auxiliar = auxiliar.replace(/\n/g,"");
+                auxiliar = auxiliar.replace(/\r/g,"");
+                auxiliar = auxiliar.replace(/\t/g,"");
                 if (auxiliar.charAt(auxiliar.length - 1) == ' ') {
                   C110 += auxiliar.slice(0, -1) + '|' + salto;
                 } else {
@@ -5019,9 +5022,9 @@ define(["N/record", "N/runtime", "N/file", "N/email", "N/search", "N/format",
                 StrReporte += arrTransaction[i][0].substring(arrTransaction[i][0].length - 6, arrTransaction[i][0].length) + '|';
                 //2.TXT_COMPL
                 auxiliar = String(arrTransaction[i][70]).substring(0, 250);
-                auxiliar = auxiliar.split("\n").join("");
-                auxiliar = auxiliar.split("\r").join("");
-                auxiliar = auxiliar.split("\t").join("");
+                auxiliar = auxiliar.replace(/\n/g,"");
+                auxiliar = auxiliar.replace(/\r/g,"");
+                auxiliar = auxiliar.replace(/\t/g,"");
                 if (auxiliar.charAt(auxiliar.length - 1) == ' ') {
                   StrReporte += auxiliar.slice(0, -1) + '|' + salto;
                 } else {
