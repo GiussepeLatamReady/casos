@@ -22,3 +22,5 @@ quitarle el valor absoluto
 Name: LatamReady AR - Perception Done IIBB CABA Without Jobs
 id: customsearch_lmry_ar_percep_done_ca_jobsluto al monto de comprobante
 
+
+CASE WHEN {taxitem}<>'E-AR' AND NVL({custcol_lmry_ar_item_tributo},'F')<>'T' AND NVL({custcol_lmry_ar_item_tributo},'F')<>'Yes' AND {taxitem}<>'UNDEF_AR' AND {taxitem}<>'undef_ar' AND {taxitem}<>'UNDEF-AR' AND {taxitem}<>'undef-ar' AND {taxitem}<>'ENop-AR' AND {taxitem}<>'IZ-AR' AND SUBSTR({taxitem},0,4)<>'PERC' AND SUBSTR({taxitem},0,4)<>'Perc' THEN NVL({debitamount},0) - NVL({creditamount},0) ELSE 0 END

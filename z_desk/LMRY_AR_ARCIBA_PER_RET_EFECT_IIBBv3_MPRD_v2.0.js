@@ -206,7 +206,7 @@
                  columna7 = '';
              }
 
-             if (arrTemp[23] == 'PER' && feamultibook) {
+             if (arrTemp[23] == 'PER') {
                 columna7 = getGrossAmount(arrTemp[27]);
              }
              var paymentTC;
@@ -2841,10 +2841,7 @@
             type: "transaction",
             filters:
                 [
-                    ["internalid", "anyof", id],
-                    "AND",
-                    ["accountingtransaction.accountingbook", "anyof", paramMultibook],
-
+                    ["internalid", "anyof", id]            
                 ],
             columns:
                 [
@@ -2857,10 +2854,37 @@
                 })]
         });
 
-       
+        if (feamultibook) {
+
+            var multibookFilter = search.createFilter({
+                name: 'accountingbook',
+                join: 'accountingtransaction',
+                operator: search.Operator.IS,
+                values: [paramMultibook]
+            });
+            searchTransaction.filters.push(multibookFilter);
+            var accountFilter = search.createFilter({
+                name: 'account',
+                join: 'accountingtransaction',
+                operator: search.Operator.NONEOF,
+                values: "@NONE@"
+            });
+            searchTransaction.filters.push(accountFilter);
+            var formula = "CASE WHEN {taxitem}<>'E-AR' AND NVL({custcol_lmry_ar_item_tributo},'F')<>'T' AND NVL({custcol_lmry_ar_item_tributo},'F')<>'Yes' AND {taxitem}<>'UNDEF_AR' AND {taxitem}<>'undef_ar' AND {taxitem}<>'UNDEF-AR' AND {taxitem}<>'undef-ar' AND {taxitem}<>'ENop-AR' AND {taxitem}<>'IZ-AR' AND SUBSTR({taxitem},0,4)<>'PERC' AND SUBSTR({taxitem},0,4)<>'Perc' THEN NVL({accountingtransaction.debitamount},0) - NVL({accountingtransaction.creditamount},0) ELSE 0 END"
+
+        }else{
+            var accountFilter = search.createFilter({
+                name: "formulatext",
+                formula: "{account}",
+                operator: search.Operator.ISNOTEMPTY
+            });
+            searchTransaction.filters.push(accountFilter);
+            var formula = "CASE WHEN {taxitem}<>'E-AR' AND NVL({custcol_lmry_ar_item_tributo},'F')<>'T' AND NVL({custcol_lmry_ar_item_tributo},'F')<>'Yes' AND {taxitem}<>'UNDEF_AR' AND {taxitem}<>'undef_ar' AND {taxitem}<>'UNDEF-AR' AND {taxitem}<>'undef-ar' AND {taxitem}<>'ENop-AR' AND {taxitem}<>'IZ-AR' AND SUBSTR({taxitem},0,4)<>'PERC' AND SUBSTR({taxitem},0,4)<>'Perc' THEN NVL({debitamount},0) - NVL({creditamount},0) ELSE 0 END"
+            
+        }
          var grossAmount = search.createColumn({
              name: "formulacurrency",
-             formula: "CASE WHEN {taxitem}<>'E-AR' AND NVL({custcol_lmry_ar_item_tributo},'F')<>'T' AND NVL({custcol_lmry_ar_item_tributo},'F')<>'Yes' AND {taxitem}<>'UNDEF_AR' AND {taxitem}<>'undef_ar' AND {taxitem}<>'UNDEF-AR' AND {taxitem}<>'undef-ar' AND {taxitem}<>'ENop-AR' AND {taxitem}<>'IZ-AR' AND SUBSTR({taxitem},0,4)<>'PERC' AND SUBSTR({taxitem},0,4)<>'Perc' THEN NVL({accountingtransaction.debitamount},0) - NVL({accountingtransaction.creditamount},0) ELSE 0 END",
+             formula: formula,
              summary: "SUM",
          });
          searchTransaction.columns.push(grossAmount);
