@@ -400,13 +400,13 @@
                          columna16 = '';
                      }
                  }
-
+                 if(arrTemp[23] == 'PER'){
+                    if(columna4 == 'A' || columna4 == 'M'){
+                        columna16 = getTaxAmount(arrTemp[27]);
+                    }               
+                 }
                  if (feamultibook || feamultibook == 'T') {
-                     if(arrTemp[23] == 'PER'){
-                        if(columna4 == 'A' || columna4 == 'M'){
-                            columna16 = getTaxAmount(arrTemp[27]);
-                        }               
-                     }
+                     
                      columna16 = completar_cero(16, Number(columna16).toFixed(2)).replace('.', ',');
                  } else {
                      columna16 = completar_cero(16, (Number(columna16)).toFixed(2)).replace('.', ',');
@@ -423,17 +423,17 @@
                      columna16 = '';
                  }
 
-                 
+                 if(arrTemp[23] == 'PER'){
+                    if(columna4 == 'A' || columna4 == 'M'){
+                        columna16 = getTaxAmount(arrTemp[27]);
+                    }               
+                 }
                  if (feamultibook || feamultibook == 'T') {
                      if(arrTemp[23] == 'RET'){
                          
                          columna16 = completar_cero(16, (Number(columna16) * Number(paymentTC)).toFixed(2));
                      }
-                     if(arrTemp[23] == 'PER'){
-                        if(columna4 == 'A' || columna4 == 'M'){
-                            columna16 = getTaxAmount(arrTemp[27]);
-                        }               
-                     }
+                     
                      columna16 = completar_cero(16, Number(columna16).toFixed(2)).replace('.', ',');
                  } else {
                      if(arrTemp[23] == 'PER'){
@@ -2799,18 +2799,12 @@
              filters:
                  [
                      ["internalid", "anyof", id],
-                     "AND",
-                     ["accountingtransaction.accountingbook", "anyof", paramMultibook],
                      "AND", 
                      ["taxline","is","T"]
                  ],
              columns:
                  [
-                     search.createColumn({
-                         name: "formulacurrency",
-                         formula: "ABS({accountingtransaction.amount})",
-                         label: "Formula (Currency)"
-                     })
+                
                  ],
              settings: [
                  search.createSetting({
@@ -2818,6 +2812,26 @@
                      value: 'NONE'
                  })]
          });
+
+         if (feamultibook) {
+
+            var multibookFilter = search.createFilter({
+                name: 'accountingbook',
+                join: 'accountingtransaction',
+                operator: search.Operator.IS,
+                values: [paramMultibook]
+            });
+            searchTransaction.filters.push(multibookFilter);
+            var formula = "ABS({accountingtransaction.amount})";
+         }else{
+            var formula = "ABS({amount})";
+         }
+         
+         var amount = search.createColumn({
+             name: "formulacurrency",
+             formula: formula
+         });
+         searchTransaction.columns.push(amount);
 
          var myPageData = searchTransaction.runPaged({ pageSize: 1000 });
          myPageData.pageRanges.forEach(function (pageRange) {
@@ -2863,6 +2877,7 @@
                 values: [paramMultibook]
             });
             searchTransaction.filters.push(multibookFilter);
+
             var accountFilter = search.createFilter({
                 name: 'account',
                 join: 'accountingtransaction',
@@ -2870,6 +2885,7 @@
                 values: "@NONE@"
             });
             searchTransaction.filters.push(accountFilter);
+
             var formula = "CASE WHEN {taxitem}<>'E-AR' AND NVL({custcol_lmry_ar_item_tributo},'F')<>'T' AND NVL({custcol_lmry_ar_item_tributo},'F')<>'Yes' AND {taxitem}<>'UNDEF_AR' AND {taxitem}<>'undef_ar' AND {taxitem}<>'UNDEF-AR' AND {taxitem}<>'undef-ar' AND {taxitem}<>'ENop-AR' AND {taxitem}<>'IZ-AR' AND SUBSTR({taxitem},0,4)<>'PERC' AND SUBSTR({taxitem},0,4)<>'Perc' THEN NVL({accountingtransaction.debitamount},0) - NVL({accountingtransaction.creditamount},0) ELSE 0 END"
 
         }else{
