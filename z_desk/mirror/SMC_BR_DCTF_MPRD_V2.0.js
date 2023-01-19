@@ -66,7 +66,7 @@
     var param_Multi = "1";
     var param_Feature ="1";
     var param_Num_Recti = "";//RECTIFICATION NUMBER
-    var param_Type_Decla = "";//0 o 1
+    var param_Type_Decla = "0";//0 o 1
     var param_Lucro_Conta = "";//Accounting Profit
     var param_Monto_Adicional = "";//ADDITIONAL AMOUNT
     var param_Monto_Excluyente = "";//EXCLUDING AMOUNT

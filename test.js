@@ -1,11 +1,33 @@
+var txt = "R014029148500013420221000000000001103110000000000000010700010200000000000140";
 
+var matriz = [
+  [1,3],
+  [4,17],
+  [18,23],
+  [24,24],
+  [25,32],
+  [33,36],
+  [37,40],
+  [41,41],
+  [42,53],
+  [54,54],
+  [55,56],
+  [57,57],
+  [58,58],
+  [59,59],
+  [60,60],
+  [61,61],
+  [62,62],
+  [63,73],
+  [74,74],
+  [75,75],
+  [76,76],
+  [77,86],
+  [87,88]
+]
 
+matriz.forEach((element,index) => {
+  var ind=index+1;
+  console.log("C "+ind + " :"+ txt.substring(element[0]-1,element[1]));
+});
 
-var auxiliar = 'NUM TRANS:INV10097239\t\t\n\n,PERIOD:Dec 2022,SUBSI:Honeycomb Holdings : Honey\n\tComb BR,IMP RET DESC:wh tax desc,TERMINOS:Net 30, ITEM [1]: 72562897-DESC:400 Watt Power Supply-QTY:1-MONTO: 200.00'
-console.log("aux 1:",auxiliar)
-// auxiliar = auxiliar.replace(/\r\n/g,'');
-// auxiliar = auxiliar.replace(/\t/g,'');
-auxiliar = auxiliar.replace(/\n/g,"");
-auxiliar = auxiliar.replace(/\r/g,"");
-auxiliar = auxiliar.replace(/\t/g,"");
-console.log("aux 2:",auxiliar)

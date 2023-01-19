@@ -2051,6 +2051,7 @@ function(recordModulo, runtime, fileModulo, email, search, format, log,
    if (FolderId != '' && FolderId != null) {
      // Extension del archivo
      var NameFile = "SMC_"+Name_File() + '.dec';
+     log.error("name File",NameFile);
      // Crea el archivo
      var file = fileModulo.create({
        name: NameFile,
@@ -2621,7 +2622,7 @@ function(recordModulo, runtime, fileModulo, email, search, format, log,
      var columna14 = '1'; ////*****Setup
    }
    //PJ optante pela CPRB
-   pj_cprb == false;
+   pj_cprb = false;
    if (pj_cprb == 'F' || pj_cprb == false) {
      var columna15 = '0'; ////*****Setup
    } else {
