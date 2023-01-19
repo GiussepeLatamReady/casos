@@ -1,11 +1,36 @@
 
 
+function ValidarCaracteres_Especiales(s) {
+  var AccChars = "“ŠŽšžŸÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖÙÚÛÜÝàáâãäåçèéêëìíîïðñòóôõöùúûüýÿ°–—ªº·¡@";
+  var RegChars = " SZszYAAAAAACEEEEIIIIDNOOOOOUUUUYaaaaaaceeeeiiiidnooooouuuuyyo--ao.ia";
+  s = s.toString();
+  for (var c = 0; c < s.length; c++) {
+      for (var special = 0; special < AccChars.length; special++) {
+          if (s.charAt(c) == AccChars.charAt(special)) {
+              s = s.substring(0, c) + RegChars.charAt(special) + s.substring(c + 1, s.length);
+          }
+      }
+  }
+  return s;
+}
 
-var auxiliar = 'NUM TRANS:INV10097239\t\t\n\n,PERIOD:Dec 2022,SUBSI:Honeycomb Holdings : Honey\n\tComb BR,IMP RET DESC:wh tax desc,TERMINOS:Net 30, ITEM [1]: 72562897-DESC:400 Watt Power Supply-QTY:1-MONTO: 200.00'
-console.log("aux 1:",auxiliar)
-// auxiliar = auxiliar.replace(/\r\n/g,'');
-// auxiliar = auxiliar.replace(/\t/g,'');
-auxiliar = auxiliar.replace(/\n/g,"");
-auxiliar = auxiliar.replace(/\r/g,"");
-auxiliar = auxiliar.replace(/\t/g,"");
-console.log("aux 2:",auxiliar)
+function ReemplazarCaracterEspecial(s) {
+
+  if (s != undefined) {
+
+      // s.replace(/'/i, '&#39;');
+      // s = s.replace(/</gi, '&lt;');
+      // s = s.replace(/>/gi, '&gt;');
+      // s = s.replace(/&/gi, '&amp;');
+      // s = s.replace(/"/g, '&quot;');
+      s = s.replace(/" "/g, "");
+  } else {
+      s = '';
+  }
+
+  return s;
+}
+var result1=ValidarCaracteres_Especiales(ReemplazarCaracterEspecial("TS - BO Cúst°mer&Comp@ñy =)!$//"));
+var result2=ValidarCaracteres_Especiales(ReemplazarCaracterEspecial("TS - BO \" Cúst°mer & ¡ñdividu@||12$=),."));
+console.log("text 1:",result1)
+console.log("text 2:",result2)
