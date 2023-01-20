@@ -274,13 +274,13 @@ function(recordModulo, runtime, fileModulo, email, search, format, log,
      if (cont_reg > 4) {
        SaveFile();
      } else {
-       //NoData(false);
+       NoData(false);
      }
    } catch (error) {
      log.error("Error en schedule dec", error);
      //libreria.sendemailTranslate(error, LMRY_script, language);
      //libreria.sendErrorEmail(error, LMRY_script, language);
-     //NoData(true);
+     NoData(true);
    }
  }
 
@@ -2050,7 +2050,7 @@ function(recordModulo, runtime, fileModulo, email, search, format, log,
    // Almacena en la carpeta de Archivos Generados
    if (FolderId != '' && FolderId != null) {
      // Extension del archivo
-     var NameFile = "SMC_"+Name_File() + '.dec';
+     var NameFile = Name_File() + '.dec';
      log.error("name File",NameFile);
      // Crea el archivo
      var file = fileModulo.create({
@@ -2094,32 +2094,32 @@ function(recordModulo, runtime, fileModulo, email, search, format, log,
        });
        var usuario = employeename.firstname + ' ' + employeename.lastname;
 
-      //  var record = recordModulo.load({
-      //    type: 'customrecord_lmry_br_rpt_generator_log',
-      //    id: param_RecorID
-      //  });
-      //  //Periodo
-      //  /*record.setValue({
-      //    fieldId: 'custrecord_lmry_br_rg_period',
-      //    value: periodname
-      //  });*/
-      //  //Nombre de Archivo
-      //  record.setValue({
-      //    fieldId: 'custrecord_lmry_br_rg_name_field',
-      //    value: NameFile
-      //  });
-      //  //Url de Archivo
-      //  record.setValue({
-      //    fieldId: 'custrecord_lmry_br_rg_url_file',
-      //    value: urlfile
-      //  });
-      //  //Creado Por
-      //  record.setValue({
-      //    fieldId: 'custrecord_lmry_br_rg_employee',
-      //    value: usuario
-      //  });
+       var record = recordModulo.load({
+         type: 'customrecord_lmry_br_rpt_generator_log',
+         id: param_RecorID
+       });
+       //Periodo
+       /*record.setValue({
+         fieldId: 'custrecord_lmry_br_rg_period',
+         value: periodname
+       });*/
+       //Nombre de Archivo
+       record.setValue({
+         fieldId: 'custrecord_lmry_br_rg_name_field',
+         value: NameFile
+       });
+       //Url de Archivo
+       record.setValue({
+         fieldId: 'custrecord_lmry_br_rg_url_file',
+         value: urlfile
+       });
+       //Creado Por
+       record.setValue({
+         fieldId: 'custrecord_lmry_br_rg_employee',
+         value: usuario
+       });
 
-      //  var recordId = record.save();
+       var recordId = record.save();
        // Envia mail de conformidad al usuario
        //libreria.sendConfirmUserEmail(namereport, 3, NameFile, language);
        //libreria.sendrptuserTranslate(namereport, 3, NameFile, language);

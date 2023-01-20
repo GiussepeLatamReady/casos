@@ -26,51 +26,51 @@
      //codigos de tipos de notas fiscales electronicas
  
      //Parametros
-    //  param_RecorID = objContext.getParameter({
-    //    name: 'custscript_lmry_br_rpt_dctf_mpr_recordid'
-    //  });
-    //  param_Periodo = objContext.getParameter({
-    //    name: 'custscript_lmry_br_rpt_dctf_mpr_periodo'
-    //  });
-    //  param_Subsi = objContext.getParameter({
-    //    name: 'custscript_lmry_br_rpt_dctf_mpr_subsidia'
-    //  });
-    //  param_Multi = objContext.getParameter({
-    //    name: 'custscript_lmry_br_rpt_dctf_mpr_multiboo'
-    //  });
-    //  param_Feature = objContext.getParameter({
-    //    name: 'custscript_lmry_br_rpt_dctf_mpr_feature'
-    //  });
-    //  param_Num_Recti = objContext.getParameter({
-    //    name: 'custscript_lmry_br_rpt_dctf_mpr_rectific'
-    //  });
-    //  param_Type_Decla = objContext.getParameter({
-    //    name: 'custscript_lmry_br_rpt_dctf_mpr_tipo_dec'
-    //  });
-    //  param_Lucro_Conta = objContext.getParameter({
-    //    name: 'custscript_lmry_br_rpt_dctf_mpr_lucro'
-    //  });
-    //  param_Monto_Adicional = objContext.getParameter({
-    //    name: 'custscript_lmry_br_rpt_dctf_mpr_monto_ad'
-    //  });
-    //  param_Monto_Excluyente = objContext.getParameter({
-    //    name: 'custscript_lmry_br_rpt_dctf_mpr_monto_ex'
-    //  });
-    //  param_Excel = objContext.getParameter({
-    //    name: 'custscript_lmry_br_rpt_dctf_mpr_excel'
-    //  });
+     param_RecorID = objContext.getParameter({
+       name: 'custscript_smc_br_rpt_dctf_mpr_recordid'
+     });
+     param_Periodo = objContext.getParameter({
+       name: 'custscript_smc_br_rpt_dctf_mpr_periodo'
+     });
+     param_Subsi = objContext.getParameter({
+       name: 'custscript_smc_br_rpt_dctf_mpr_subsidia'
+     });
+     param_Multi = objContext.getParameter({
+       name: 'custscript_smc_br_rpt_dctf_mpr_multiboo'
+     });
+     param_Feature = objContext.getParameter({
+       name: 'custscript_smc_br_rpt_dctf_mpr_feature'
+     });
+     param_Num_Recti = objContext.getParameter({
+       name: 'custscript_smc_br_rpt_dctf_mpr_rectific'
+     });
+     param_Type_Decla = objContext.getParameter({
+       name: 'custscript_smc_br_rpt_dctf_mpr_tipo_dec'
+     });
+     param_Lucro_Conta = objContext.getParameter({
+       name: 'custscript_smc_br_rpt_dctf_mpr_lucro'
+     });
+     param_Monto_Adicional = objContext.getParameter({
+       name: 'custscript_smc_br_rpt_dctf_mpr_monto_ad'
+     });
+     param_Monto_Excluyente = objContext.getParameter({
+       name: 'custscript_smc_br_rpt_dctf_mpr_monto_ex'
+     });
+     param_Excel = objContext.getParameter({
+       name: 'custscript_smc_br_rpt_dctf_mpr_excel'
+     });
 
-    var param_RecorID = "";
-    var param_Periodo ="134";
-    var param_Subsi = "8";
-    var param_Multi = "1";
-    var param_Feature ="1";
-    var param_Num_Recti = "";//RECTIFICATION NUMBER
-    var param_Type_Decla = "0";//0 o 1
-    var param_Lucro_Conta = "";//Accounting Profit
-    var param_Monto_Adicional = "";//ADDITIONAL AMOUNT
-    var param_Monto_Excluyente = "";//EXCLUDING AMOUNT
-    var param_Excel = "F";
+    // var param_RecorID = "";
+    // var param_Periodo ="134";
+    // var param_Subsi = "8";
+    // var param_Multi = "1";
+    // var param_Feature ="1";
+    // var param_Num_Recti = "";//RECTIFICATION NUMBER
+    // var param_Type_Decla = "0";//0 o 1
+    // var param_Lucro_Conta = "";//Accounting Profit
+    // var param_Monto_Adicional = "";//ADDITIONAL AMOUNT
+    // var param_Monto_Excluyente = "";//EXCLUDING AMOUNT
+    // var param_Excel = "F";
  
      //************FEATURES********************
      feature_Subsi = runtime.isFeatureInEffect({
@@ -480,7 +480,7 @@
          if (errores.length > 0) {
            //libreria.sendemailTranslate(errores[0], LMRY_script, language);
            //libreria.sendErrorEmail(errores[0], LMRY_script, language);
-           //NoData(true);
+           NoData(true);
            return;
          }
          
@@ -566,7 +566,7 @@
          log.error("Error en summarize", error);
          //libreria.sendemailTranslate(error, LMRY_script, language);
          //libreria.sendErrorEmail(error, LMRY_script, language);
-         //NoData(true);
+         NoData(true);
        }
      }
  

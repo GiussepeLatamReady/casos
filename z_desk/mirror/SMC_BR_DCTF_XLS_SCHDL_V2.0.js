@@ -186,7 +186,7 @@ function(recordModulo, runtime, fileModulo, email, search, format, log,
      }
 
      if (ArrSetupDCTF_Sales.length == 0 && ArrSetupDCTF_Sales_Inv.length == 0 && ArrSetupDCTF_Purchases.length == 0 && ArrSetupDCTF_Purchases_Inv.length == 0 && ArrPayroll.length == 0 && Arr_WHT_Item.length == 0 && Arr_WHT_No_Item.length == 0 && ArrJournalImportacion.length == 0 && param_Monto_Excluyente == 0 && param_Monto_Adicional == 0 && param_Lucro_Conta == 0) {
-       //NoData(false);
+       NoData(false);
      } else {
        SaveFile();
      }
@@ -194,7 +194,7 @@ function(recordModulo, runtime, fileModulo, email, search, format, log,
      log.error('Error SCHDL XLS', error);
      //libreria.sendemailTranslate(error, LMRY_script, language);
      //libreria.sendErrorEmail(error, LMRY_script, language);
-     //NoData(true);
+     NoData(true);
    }
  }
 
@@ -999,37 +999,37 @@ function(recordModulo, runtime, fileModulo, email, search, format, log,
        });
        var usuario = employeename.firstname + ' ' + employeename.lastname;
 
-      //  var record = recordModulo.load({
-      //    type: 'customrecord_lmry_br_rpt_generator_log',
-      //    id: param_RecordLogID
-      //  });
-      //  //Periodo
-      //  /*record.setValue({
-      //    fieldId: 'custrecord_lmry_br_rg_period',
-      //    value: periodname
-      //  });*/
-      //  //Nombre de Archivo
-      //  record.setValue({
-      //    fieldId: 'custrecord_lmry_br_rg_name_field',
-      //    value: NameFile
-      //  });
-      //  //Url de Archivo
-      //  record.setValue({
-      //    fieldId: 'custrecord_lmry_br_rg_url_file',
-      //    value: urlfile
-      //  });
-      //  //Creado Por
-      //  record.setValue({
-      //    fieldId: 'custrecord_lmry_br_rg_employee',
-      //    value: usuario
-      //  });
-      //  //Multibook
-      //  record.setValue({
-      //    fieldId: 'custrecord_lmry_br_rg_multibook',
-      //    value: multibookName
-      //  });
+       var record = recordModulo.load({
+         type: 'customrecord_lmry_br_rpt_generator_log',
+         id: param_RecordLogID
+       });
+       //Periodo
+       /*record.setValue({
+         fieldId: 'custrecord_lmry_br_rg_period',
+         value: periodname
+       });*/
+       //Nombre de Archivo
+       record.setValue({
+         fieldId: 'custrecord_lmry_br_rg_name_field',
+         value: NameFile
+       });
+       //Url de Archivo
+       record.setValue({
+         fieldId: 'custrecord_lmry_br_rg_url_file',
+         value: urlfile
+       });
+       //Creado Por
+       record.setValue({
+         fieldId: 'custrecord_lmry_br_rg_employee',
+         value: usuario
+       });
+       //Multibook
+       record.setValue({
+         fieldId: 'custrecord_lmry_br_rg_multibook',
+         value: multibookName
+       });
 
-      //  var recordId = record.save();
+       var recordId = record.save();
        //libreria.sendrptuserTranslate(NameReport, 3, NameFile, language);
        //libreria.sendConfirmUserEmail(NameReport, 3, NameFile, language);
      }
