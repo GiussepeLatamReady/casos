@@ -13,7 +13,7 @@
  * @NModuleScope Public
  */
 
- define(['N/record', 'N/runtime', 'N/file', 'N/encode', 'N/search', 'N/format', 'N/log', 'N/config', "/SuiteBundles/Bundle 35754/Latam_Library/LMRY_LibraryReport_LBRY_V2.js"],
+ define(['N/record', 'N/runtime', 'N/file', 'N/encode', 'N/search', 'N/format', 'N/log', 'N/config', "/SuiteBundles/Bundle 37714/Latam_Library/LMRY_LibraryReport_LBRY_V2.js"],
     function(record, runtime, file, encode, search, format, log, config, libreria) {
 
         var objContext = runtime.getCurrentScript();

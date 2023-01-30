@@ -383,7 +383,7 @@
                 savedSearch.filters.push(subsidiaryFilter);
             }
 
-            
+            log.debug("formulPeriodFilters",formulPeriodFilters)
             var periodFilter = search.createFilter({
                 name: "formulatext",
                 formula: formulPeriodFilters,
@@ -469,6 +469,7 @@
                 });
                 savedSearch.columns[1] = multibookAmountColumn;
             } else {
+                log.debug("accountsIdArray",accountsIdArray)
 
                 if (accountsIdArray.length != 0) {
                     var accountsFilter = search.createFilter({
@@ -685,7 +686,7 @@
                 featAccountingSpecial = libreria.getAuthorization(664, licenses);
                
             }
-
+            log.debug("featAccountingSpecial ",featAccountingSpecial )
             if (featAccountingSpecial || featAccountingSpecial == 'T') {
                 var arrPeriodoSpecial = validarSpecialPeriod(paramPeriod);
                 formulPeriodFilters = generarStringFilterPostingPeriodAnual(arrPeriodoSpecial);
